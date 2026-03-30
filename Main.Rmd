@@ -1,5 +1,5 @@
 ---
-title: "Main"
+title: "Main_data_cleaning"
 author: "MIKE"
 date: "2026-03-27"
 output: html_document
@@ -9,9 +9,10 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# clean data
 
 ```{r}
-my_data = read.csv("depression_data.csv")
+my_data = read.csv("depression_data.csv", stringsAsFactors = TRUE)
 
 removes = c("Name")
 my_data[removes] = NULL
@@ -23,6 +24,7 @@ my_data[char_cols] <- lapply(my_data[char_cols], as.factor)
 
 summary(my_data)
 ```
+
 
 
 
