@@ -1,0 +1,66 @@
+---
+title: "trainingtestingsplit"
+output: html_document
+---
+
+# import data
+
+```{r}
+depression <- readRDS("cleaned_depression.rds")
+```
+
+
+# training testing split original data structure (no dummy)
+
+```{r}
+
+set.seed(12345)
+ratio <- 0.5
+
+train_rows_og <- sample(1:nrow(depression), ratio*nrow(depression))
+
+train_og <- depression[train_rows_og, ]
+test_og <- depression[-train_rows_og, ]
+
+saveRDS(train_og, file = "train_original.rds")
+saveRDS(test_og, file = "test_originial.rds")
+```
+
+
+# training testing split dummy
+
+```{r}
+
+depression_d <- as.data.frame(model.matrix(~ . -1, data = depression))
+
+library(janitor)
+
+depression_d <- clean_names(depression_d)
+
+str(depression_d)
+
+minmax <- function(x){
+  (x - min(x)) / (max(x) - min(x))
+}
+
+#normalized data
+depression_n <- as.data.frame(lapply(depression_d, minmax))
+```
+
+## creating the clean training and testing data with dummy variables 
+
+```{r}
+set.seed(12345)
+ratio <- 0.5
+
+train_rows_dummy <- sample(1:nrow(depression_n), ratio*nrow(depression_n))
+
+train_dummy <- depression_n[train_rows_dummy, ]
+test_dummy <- depression_n[-train_rows_dummy, ]
+
+saveRDS(train_dummy, file = "train_dummy.rds")
+saveRDS(test_dummy, file = "test_dummy.rds")
+
+```
+
+

@@ -25,6 +25,11 @@ my_data[char_cols] <- lapply(my_data[char_cols], as.factor)
 summary(my_data)
 ```
 
+# export
+
+```{r}
+saveRDS(my_data, file = "cleaned_depression.rds")
+```
 
 
 
