@@ -23,7 +23,7 @@ train_og <- depression[train_rows_og, ]
 test_og <- depression[-train_rows_og, ]
 
 saveRDS(train_og, file = "train_original.rds")
-saveRDS(test_og, file = "test_originial.rds")
+saveRDS(test_og, file = "test_original.rds")
 ```
 
 
