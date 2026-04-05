@@ -1,0 +1,73 @@
+---
+title: "KNN Depression"
+author: "Andrea Demelas"
+date: "2026-04-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load Data
+
+```{r, cache = TRUE}
+train_dummy <- readRDS("train_dummy.rds")
+test_dummy  <- readRDS("test_dummy.rds")
+```
+
+# KNN Model on history of mental illness
+
+```{r, cache = TRUE}
+library(class)
+library(caret)
+
+knnpred_mental <- knn(train = train_dummy[, -(ncol(train_dummy)-3)],
+                      test  = test_dummy[, -(ncol(test_dummy)-3)],
+                      cl    = factor(train_dummy[, ncol(train_dummy)-3]),
+                      k = 15, prob = TRUE)
+
+p_mental <- attr(knnpred_mental, "prob")
+knn_prob_mental <- ifelse(as.character(knnpred_mental) == 1, p_mental, 1 - p_mental)
+summary(knn_prob_mental)
+```
+
+## Confusion Matrix
+
+```{r, cache = TRUE}
+confusionMatrix(as.factor(knnpred_mental),
+                as.factor(test_dummy[, ncol(test_dummy)-3]),
+                positive = "1")
+```
+
+# KNN Model on history of substance abuse
+
+```{r, cache = TRUE}
+knnpred_substance <- knn(train = train_dummy[, -(ncol(train_dummy)-2)],
+                         test  = test_dummy[, -(ncol(test_dummy)-2)],
+                         cl    = factor(train_dummy[, ncol(train_dummy)-2]),
+                         k = 15, prob = TRUE)
+
+p_substance <- attr(knnpred_substance, "prob")
+knn_prob_substance <- ifelse(as.character(knnpred_substance) == 1, p_substance, 1 - p_substance)
+summary(knn_prob_substance)
+```
+
+## Confusion Matrix
+
+```{r, cache = TRUE}
+confusionMatrix(as.factor(knnpred_substance),
+                as.factor(test_dummy[, ncol(test_dummy)-2]),
+                positive = "1")
+```
+
+# Save Probabilities
+
+```{r, cache = TRUE}
+saveRDS(knn_prob_mental, "knn_prob_mental_illness.rds")
+saveRDS(knnpred_mental, "knn_pred_mental_illness.rds")
+
+saveRDS(knn_prob_substance, "knn_prob_substance_abuse.rds")
+saveRDS(knnpred_substance, "knn_pred_substance_abuse.rds")
+```
+
