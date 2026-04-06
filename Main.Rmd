@@ -15,6 +15,8 @@ knitr::opts_chunk$set(echo = TRUE)
 my_data_raw = read.csv("depression_data.csv", stringsAsFactors = TRUE)
 
 # split into a more manageable portion of the dataset
+my_data <- my_data_raw[sample(1:nrow(my_data_raw), 0.1*nrow(my_data_raw)), ]
+
 
 my_data$Name <- NULL
 
