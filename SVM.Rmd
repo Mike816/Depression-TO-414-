@@ -1,0 +1,72 @@
+---
+title: "SVM"
+output: html_document
+---
+
+# import data
+```{r}
+train <- readRDS("train_original.rds")
+test <- readRDS("test_original.rds")
+```
+
+
+```{r, cache=TRUE}
+
+library(kernlab)
+
+# radial basis rbfdot
+tanhdotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "tanhdot")
+polydotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "polydot")
+vanilladotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "vanilladot")
+aplacedotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "laplacedot")
+besseldotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "besseldot")
+anovadotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "anovadot")
+splinedotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "splinedot")
+rbfdotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "rbfdot")
+
+#saveRDS(rbfdotmodel, file = "rbf_model.rds")
+#saveRDS(tanhdotmodel, file = "tanhdot.rds")
+#saveRDS(polydotmodel, file = "polydot.rds")
+#saveRDS(vanilladotmodel, file = "vanilla.rds")
+#saveRDS(laplacedotmodel, file = "laplace.rds")
+#saveRDS(besseldotmodel, file = "bessel.rds")
+#saveRDS(anovadotmodel, file = "anova.rds")
+#saveRDS(splinedotmodel, file = "splinedot.rds")
+
+#loaded_rbf <- readRDS(file = "rbf_model.rds")
+#loaded_tan <- readRDS(file = "tanhdot.rds")
+#loaded_poly <- readRDS(file = "polydot.rds")
+#loaded_vanilla <- readRDS(file = "vanilla.rds")
+#loaded_laplace <- readRDS(file = "laplace.rds")
+#loaded_bessel <- readRDS(file = "bessel.rds")
+#loaded_anova <- readRDS(file = "anova.rds")
+#loaded_spline <- readRDS(file = "splinedot.rds")
+
+
+tanh_pred <- predict(loaded_tan, test)
+poly_pred <- predict(loaded_poly, test)
+v_pred <- predict(loaded_vanilla, test)
+l_pred <- predict(loaded_laplace, test)
+b_pred <- predict(loaded_bessel, test)
+a_pred <- predict(loaded_anova, test)
+s_pred <- predict(loaded_spline, test)
+rbf_pred  <- predict(loaded_rbf, test)
+rbf_pred  <- predict(rbfdotmodel, test)
+
+
+#table(v_pred, tele_test$y)
+
+## NOT A BINARY PREDICTION, so don't use confusion matrix
+
+## this time, use confusion matrix because this is a binary prediction
+library(caret)
+confusionMatrix(as.factor(tanh_pred), as.factor(test$History.of.Mental.Illness), positive = "yes")
+confusionMatrix(as.factor(poly_pred), as.factor(test$History.of.Mental.Illness), positive = "yes")
+confusionMatrix(as.factor(v_pred), as.factor(test$History.of.Mental.Illness), positive = "yes")
+confusionMatrix(as.factor(l_pred), as.factor(test$History.of.Mental.Illness), positive = "yes")
+confusionMatrix(as.factor(b_pred), as.factor(test$History.of.Mental.Illness), positive = "yes")
+confusionMatrix(as.factor(a_pred), as.factor(test$History.of.Mental.Illness), positive = "yes")
+confusionMatrix(as.factor(s_pred), as.factor(test$History.of.Mental.Illness), positive = "yes")
+confusionMatrix(as.factor(rbf_pred), as.factor(test$History.of.Mental.Illness), positive = "yes")
+```
+
