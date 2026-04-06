@@ -16,6 +16,8 @@ my_data = read.csv("depression_data.csv", stringsAsFactors = TRUE)
 
 removes = c("Name")
 my_data[removes] = NULL
+=======
+
 
 str(my_data)
 
