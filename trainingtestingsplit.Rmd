@@ -14,7 +14,6 @@ depression <- readRDS("cleaned_depression.rds")
 
 ```{r}
 
-set.seed(12345)
 ratio <- 0.5
 
 train_rows_og <- sample(1:nrow(depression), ratio*nrow(depression))
@@ -23,7 +22,7 @@ train_og <- depression[train_rows_og, ]
 test_og <- depression[-train_rows_og, ]
 
 saveRDS(train_og, file = "train_original.rds")
-saveRDS(test_og, file = "test_originial.rds")
+saveRDS(test_og, file = "test_original.rds")
 ```
 
 
