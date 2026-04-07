@@ -20,7 +20,7 @@ test <- readRDS("test_original.rds")
 
 library(kernlab)
 
-<<<<<<< HEAD
+
 # radial basis rbfdot
 #tanhdotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "tanhdot")
 #polydotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "polydot")
@@ -30,19 +30,7 @@ library(kernlab)
 #anovadotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "anovadot")
 splinedotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "splinedot")
 #rbfdotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "rbfdot")
-=======
 
-# verbose helps us see progress
-
-tanhdotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "tanhdot", verbose = TRUE)
-polydotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "polydot", verbose = TRUE)
-vanilladotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "vanilladot", verbose = TRUE)
-aplacedotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "laplacedot", verbose = TRUE)
-besseldotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "besseldot", verbose = TRUE)
-anovadotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "anovadot", verbose = TRUE)
-splinedotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "splinedot", verbose = TRUE)
-rbfdotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "rbfdot", verbose = TRUE)
->>>>>>> 017fc2d5c3700805cc37b7b0ff1f886c49202f92
 
 #saveRDS(rbfdotmodel, file = "rbf_model.rds")
 #saveRDS(tanhdotmodel, file = "tanhdot.rds")
