@@ -6,6 +6,12 @@ output: html_document
 # import data
 ```{r}
 train <- readRDS("train_original.rds")
+
+summary(train)
+```
+
+
+```{r}
 test <- readRDS("test_original.rds")
 ```
 
@@ -15,14 +21,14 @@ test <- readRDS("test_original.rds")
 library(kernlab)
 
 # radial basis rbfdot
-tanhdotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "tanhdot")
-polydotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "polydot")
-vanilladotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "vanilladot")
-aplacedotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "laplacedot")
-besseldotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "besseldot")
-anovadotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "anovadot")
+#tanhdotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "tanhdot")
+#polydotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "polydot")
+#vanilladotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "vanilladot")
+#aplacedotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "laplacedot")
+#besseldotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "besseldot")
+#anovadotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "anovadot")
 splinedotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "splinedot")
-rbfdotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "rbfdot")
+#rbfdotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "rbfdot")
 
 #saveRDS(rbfdotmodel, file = "rbf_model.rds")
 #saveRDS(tanhdotmodel, file = "tanhdot.rds")
@@ -31,27 +37,19 @@ rbfdotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "rbfdo
 #saveRDS(laplacedotmodel, file = "laplace.rds")
 #saveRDS(besseldotmodel, file = "bessel.rds")
 #saveRDS(anovadotmodel, file = "anova.rds")
-#saveRDS(splinedotmodel, file = "splinedot.rds")
-
-#loaded_rbf <- readRDS(file = "rbf_model.rds")
-#loaded_tan <- readRDS(file = "tanhdot.rds")
-#loaded_poly <- readRDS(file = "polydot.rds")
-#loaded_vanilla <- readRDS(file = "vanilla.rds")
-#loaded_laplace <- readRDS(file = "laplace.rds")
-#loaded_bessel <- readRDS(file = "bessel.rds")
-#loaded_anova <- readRDS(file = "anova.rds")
-#loaded_spline <- readRDS(file = "splinedot.rds")
+saveRDS(splinedotmodel, file = "splinedot.rds")
 
 
-tanh_pred <- predict(loaded_tan, test)
-poly_pred <- predict(loaded_poly, test)
-v_pred <- predict(loaded_vanilla, test)
-l_pred <- predict(loaded_laplace, test)
-b_pred <- predict(loaded_bessel, test)
-a_pred <- predict(loaded_anova, test)
-s_pred <- predict(loaded_spline, test)
-rbf_pred  <- predict(loaded_rbf, test)
-rbf_pred  <- predict(rbfdotmodel, test)
+
+
+#tanh_pred <- predict(tanhdotmodel, test)
+#poly_pred <- predict(polydotmodel, test)
+#v_pred <- predict(vanilladotmodel, test)
+#l_pred <- predict(aplacedotmodel, test)
+#b_pred <- predict(besseldotmodel, test)
+#a_pred <- predict(anovadotmodel, test)
+s_pred <- predict(splinedotmodel, test)
+#rbf_pred  <- predict(rbfdotmodel, test)
 
 
 #table(v_pred, tele_test$y)
@@ -60,13 +58,20 @@ rbf_pred  <- predict(rbfdotmodel, test)
 
 ## this time, use confusion matrix because this is a binary prediction
 library(caret)
-confusionMatrix(as.factor(tanh_pred), as.factor(test$History.of.Mental.Illness), positive = "yes")
-confusionMatrix(as.factor(poly_pred), as.factor(test$History.of.Mental.Illness), positive = "yes")
-confusionMatrix(as.factor(v_pred), as.factor(test$History.of.Mental.Illness), positive = "yes")
-confusionMatrix(as.factor(l_pred), as.factor(test$History.of.Mental.Illness), positive = "yes")
-confusionMatrix(as.factor(b_pred), as.factor(test$History.of.Mental.Illness), positive = "yes")
-confusionMatrix(as.factor(a_pred), as.factor(test$History.of.Mental.Illness), positive = "yes")
-confusionMatrix(as.factor(s_pred), as.factor(test$History.of.Mental.Illness), positive = "yes")
-confusionMatrix(as.factor(rbf_pred), as.factor(test$History.of.Mental.Illness), positive = "yes")
+#confusionMatrix(as.factor(tanh_pred), as.factor(test$History.of.Mental.Illness), positive = "Yes")
+#confusionMatrix(as.factor(poly_pred), as.factor(test$History.of.Mental.Illness), positive = "Yes")
+#confusionMatrix(as.factor(v_pred), as.factor(test$History.of.Mental.Illness), positive = "Yes")
+#confusionMatrix(as.factor(l_pred), as.factor(test$History.of.Mental.Illness), positive = "Yes")
+#confusionMatrix(as.factor(b_pred), as.factor(test$History.of.Mental.Illness), positive = "Yes")
+#confusionMatrix(as.factor(a_pred), as.factor(test$History.of.Mental.Illness), positive = "Yes")
+confusionMatrix(as.factor(s_pred), as.factor(test$History.of.Mental.Illness), positive = "Yes")
+#confusionMatrix(as.factor(rbf_pred), as.factor(test$History.of.Mental.Illness), positive = "Yes")
 ```
 
+# summary 
+
+After testing all the models, splinedot was the best, both in terms of Kappa and sensitivity. It got .05 kappa with 0.3 sensitivity. 
+
+Most of the kernels performed quite terribly. Many did not hit a single prediction. The bessel model actually had a negative kappa (-0.0091). 
+
+We hypothesize that spline dot's ability to work with non-linear connections helped it become the best kernel of the bunch. The spline kernel is known for its performance especially in sparse datasets and regression.  

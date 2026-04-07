@@ -23,11 +23,12 @@ my_data <- my_data_raw[sample(1:nrow(my_data_raw), 0.1*nrow(my_data_raw)), ]
 
 
 my_data$Name <- NULL
-str(my_data)
 
 char_cols <- sapply(my_data, is.character)
 my_data[char_cols] <- lapply(my_data[char_cols], as.factor)
 
+
+str(my_data)
 summary(my_data)
 ```
 
