@@ -1,0 +1,33 @@
+---
+title: "ANN"
+output: html_document
+---
+
+# import data
+
+```{r}
+train <- readRDS("train_dummy.rds")
+test <- readRDS("test_dummy.rds")
+
+str(train)
+str(test)
+```
+
+
+
+```{r, cache=TRUE}
+library(neuralnet)
+
+ann_model <- neuralnet(
+  formula = history_of_mental_illness_yes ~ .,
+  data = train,
+
+  hidden = c(5, 2),
+  stepmax = 1e8,
+  lifesign = "full")
+plot(ann_model)
+
+saveRDS(ann_model, file = "ann.rds")
+
+```
+
