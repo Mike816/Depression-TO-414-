@@ -4,3 +4,4 @@ models made so far
 
 - knn
 
+- svm
