@@ -31,3 +31,32 @@ saveRDS(ann_model, file = "ann.rds")
 
 ```
 
+```{r}
+library(neuralnet)
+
+# 1. Load your saved model and the dummy test data
+ann_model <- readRDS("ann.rds")
+test_dummy <- readRDS("test_dummy.rds")
+
+# 2. Identify the target column index 
+# (In your previous code, this was at ncol - 3)
+target_idx <- ncol(test_dummy) - 3
+
+# 3. Use compute() on the test data (excluding the target column)
+# IMPORTANT: The columns must be in the EXACT same order as the training data
+ann_results <- compute(ann_model, test_dummy[, -target_idx])
+
+# 4. Extract the probabilities
+# net.result is a matrix; we use as.vector() to make it a standard vector
+p_ann_mental <- as.vector(ann_results$net.result)
+
+# 5. Check the output
+summary(p_ann_mental)
+head(p_ann_mental)
+
+# 6. Save the probability vector
+saveRDS(p_ann_mental, "ann_prob_mental_illness.rds")
+```
+
+
+
