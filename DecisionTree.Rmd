@@ -1,0 +1,88 @@
+---
+title: "Decision Tree"
+author: "MIKE"
+date: "2026-04-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Import Data
+
+```{r}
+train <- readRDS("train_original.rds")
+test <- readRDS("test_original.rds")
+
+str(train)
+summary(train)
+```
+
+# Decision Tree Model (rpart)
+
+```{r}
+library(rpart)
+library(rpart.plot)
+
+loss_matrix <- matrix(c(0, 1, 5, 0), nrow = 2, byrow = TRUE)
+
+dt_model <- rpart(
+  History.of.Mental.Illness ~ ., 
+  data = train, 
+  method = "class",
+  parms = list(loss = loss_matrix),
+  control = rpart.control(cp = 0.001, minsplit = 20)
+)
+
+summary(dt_model)
+```
+
+# Visualize the Tree
+
+```{r}
+rpart.plot(dt_model, type = 4, extra = 104, fallen.leaves = TRUE)
+```
+
+# Plot
+
+```{r}
+plotcp(dt_model)
+printcp(dt_model)
+```
+
+# Pruning
+
+```{r}
+# prune using the cp with the lowest xerror
+best_cp <- dt_model$cptable[which.min(dt_model$cptable[, "xerror"]), "CP"]
+dt_model_pruned <- prune(dt_model, cp = best_cp)
+
+rpart.plot(dt_model_pruned, type = 4, extra = 104, fallen.leaves = TRUE)
+```
+
+# Predictions on Test Set
+
+```{r}
+dt_pred <- predict(dt_model_pruned, test, type = "class")
+dt_prob <- predict(dt_model_pruned, test, type = "prob")
+
+head(dt_pred)
+head(dt_prob)
+```
+
+# Evaluate
+
+```{r}
+library(caret)
+
+confusionMatrix(as.factor(dt_pred), as.factor(test$History.of.Mental.Illness), positive = "Yes")
+```
+
+# Save Outputs
+
+```{r}
+saveRDS(dt_model_pruned, file = "dt_model.rds")
+saveRDS(dt_pred, file = "dt_pred.rds")
+saveRDS(dt_prob, file = "dt_prob.rds")
+```
