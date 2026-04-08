@@ -357,6 +357,84 @@ display: none;
 </div>
 
 
+<div id="import-data" class="section level1">
+<h1>import data</h1>
+<pre class="r"><code>depression &lt;- readRDS(&quot;cleaned_depression.rds&quot;)</code></pre>
+</div>
+<div id="training-testing-split-original-data-structure-no-dummy" class="section level1">
+<h1>training testing split original data structure (no dummy)</h1>
+<pre class="r"><code>ratio &lt;- 0.5
+
+train_rows_og &lt;- sample(1:nrow(depression), ratio*nrow(depression))
+
+train_og &lt;- depression[train_rows_og, ]
+test_og &lt;- depression[-train_rows_og, ]
+
+saveRDS(train_og, file = &quot;train_original.rds&quot;)
+saveRDS(test_og, file = &quot;test_original.rds&quot;)</code></pre>
+</div>
+<div id="training-testing-split-dummy" class="section level1">
+<h1>training testing split dummy</h1>
+<pre class="r"><code>depression_d &lt;- as.data.frame(model.matrix(~ . -1, data = depression))
+
+library(janitor)</code></pre>
+<pre><code>## Warning: package &#39;janitor&#39; was built under R version 4.4.3</code></pre>
+<pre><code>## 
+## Attaching package: &#39;janitor&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:stats&#39;:
+## 
+##     chisq.test, fisher.test</code></pre>
+<pre class="r"><code>depression_d &lt;- clean_names(depression_d)
+
+str(depression_d)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    41376 obs. of  26 variables:
+##  $ age                              : num  42 28 40 57 50 39 30 35 78 66 ...
+##  $ marital_status_divorced          : num  1 0 1 0 1 0 0 0 0 0 ...
+##  $ marital_status_married           : num  0 1 0 1 0 0 1 1 1 0 ...
+##  $ marital_status_single            : num  0 0 0 0 0 1 0 0 0 0 ...
+##  $ marital_status_widowed           : num  0 0 0 0 0 0 0 0 0 1 ...
+##  $ education_level_bachelors_degree : num  0 1 0 0 1 1 0 1 0 0 ...
+##  $ education_level_high_school      : num  1 0 0 0 0 0 0 0 0 1 ...
+##  $ education_level_masters_degree   : num  0 0 0 1 0 0 0 0 0 0 ...
+##  $ education_level_ph_d             : num  0 0 1 0 0 0 0 0 0 0 ...
+##  $ number_of_children               : num  2 2 1 0 1 0 2 4 3 0 ...
+##  $ smoking_status_former            : num  0 0 0 1 0 0 0 0 0 0 ...
+##  $ smoking_status_non_smoker        : num  1 1 0 0 1 1 0 1 1 1 ...
+##  $ physical_activity_level_moderate : num  0 0 0 1 0 0 1 1 1 1 ...
+##  $ physical_activity_level_sedentary: num  1 0 0 0 1 0 0 0 0 0 ...
+##  $ employment_status_unemployed     : num  0 0 0 0 0 0 1 0 1 1 ...
+##  $ income                           : num  33582 90781 162633 110492 76410 ...
+##  $ alcohol_consumption_low          : num  0 0 0 0 0 1 0 1 0 1 ...
+##  $ alcohol_consumption_moderate     : num  1 1 0 1 1 0 1 0 0 0 ...
+##  $ dietary_habits_moderate          : num  1 0 0 1 0 0 0 0 1 0 ...
+##  $ dietary_habits_unhealthy         : num  0 0 0 0 1 0 1 0 0 1 ...
+##  $ sleep_patterns_good              : num  1 0 0 0 0 0 1 0 0 0 ...
+##  $ sleep_patterns_poor              : num  0 0 0 0 0 0 0 0 0 0 ...
+##  $ history_of_mental_illness_yes    : num  0 1 0 0 0 0 1 0 1 0 ...
+##  $ history_of_substance_abuse_yes   : num  0 0 0 0 1 1 0 0 0 0 ...
+##  $ family_history_of_depression_yes : num  0 0 0 0 0 0 0 0 0 0 ...
+##  $ chronic_medical_conditions_yes   : num  1 0 0 1 1 0 0 0 0 0 ...</code></pre>
+<pre class="r"><code>minmax &lt;- function(x){
+  (x - min(x)) / (max(x) - min(x))
+}
+
+#normalized data
+depression_n &lt;- as.data.frame(lapply(depression_d, minmax))</code></pre>
+<div id="creating-the-clean-training-and-testing-data-with-dummy-variables" class="section level2">
+<h2>creating the clean training and testing data with dummy
+variables</h2>
+<pre class="r"><code>set.seed(12345)
+ratio &lt;- 0.5
+
+train_rows_dummy &lt;- sample(1:nrow(depression_n), ratio*nrow(depression_n))
+
+train_dummy &lt;- depression_n[train_rows_dummy, ]
+test_dummy &lt;- depression_n[-train_rows_dummy, ]
+
+saveRDS(train_dummy, file = &quot;train_dummy.rds&quot;)
+saveRDS(test_dummy, file = &quot;test_dummy.rds&quot;)</code></pre>
+</div>
+</div>
 <div id="load-data" class="section level1">
 <h1>Load Data</h1>
 <pre class="r"><code>train_dummy &lt;- readRDS(&quot;train_dummy.rds&quot;)
@@ -376,7 +454,7 @@ p_mental &lt;- attr(knnpred_mental, &quot;prob&quot;)
 knn_prob_mental &lt;- ifelse(as.character(knnpred_mental) == 1, p_mental, 1 - p_mental)
 summary(knn_prob_mental)</code></pre>
 <pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-##  0.0000  0.2000  0.2667  0.3050  0.4000  0.8750</code></pre>
+##  0.0000  0.2000  0.2667  0.3037  0.4000  0.8667</code></pre>
 <div id="confusion-matrix" class="section level2">
 <h2>Confusion Matrix</h2>
 <pre class="r"><code>confusionMatrix(as.factor(knnpred_mental),
@@ -385,31 +463,30 @@ summary(knn_prob_mental)</code></pre>
 <pre><code>## Confusion Matrix and Statistics
 ## 
 ##           Reference
-## Prediction      0      1
-##          0 119074  49500
-##          1  25190  13120
+## Prediction     0     1
+##          0 13343  5671
+##          1  1085   589
 ##                                          
-##                Accuracy : 0.639          
-##                  95% CI : (0.6369, 0.641)
-##     No Information Rate : 0.6973         
+##                Accuracy : 0.6734         
+##                  95% CI : (0.667, 0.6798)
+##     No Information Rate : 0.6974         
 ##     P-Value [Acc &gt; NIR] : 1              
 ##                                          
-##                   Kappa : 0.0392         
+##                   Kappa : 0.0238         
 ##                                          
 ##  Mcnemar&#39;s Test P-Value : &lt;2e-16         
 ##                                          
-##             Sensitivity : 0.20952        
-##             Specificity : 0.82539        
-##          Pos Pred Value : 0.34247        
-##          Neg Pred Value : 0.70636        
-##              Prevalence : 0.30268        
-##          Detection Rate : 0.06342        
-##    Detection Prevalence : 0.18518        
-##       Balanced Accuracy : 0.51745        
+##             Sensitivity : 0.09409        
+##             Specificity : 0.92480        
+##          Pos Pred Value : 0.35185        
+##          Neg Pred Value : 0.70175        
+##              Prevalence : 0.30259        
+##          Detection Rate : 0.02847        
+##    Detection Prevalence : 0.08092        
+##       Balanced Accuracy : 0.50944        
 ##                                          
 ##        &#39;Positive&#39; Class : 1              
 ## </code></pre>
-<p>With k=5 -&gt; Kappa : 0.0392</p>
 </div>
 </div>
 <div id="knn-model-on-history-of-substance-abuse" class="section level1">
@@ -423,7 +500,7 @@ p_substance &lt;- attr(knnpred_substance, &quot;prob&quot;)
 knn_prob_substance &lt;- ifelse(as.character(knnpred_substance) == 1, p_substance, 1 - p_substance)
 summary(knn_prob_substance)</code></pre>
 <pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-##  0.0000  0.2000  0.3333  0.3095  0.4000  0.8667</code></pre>
+##  0.0000  0.2000  0.3125  0.3058  0.4000  0.8000</code></pre>
 <div id="confusion-matrix-1" class="section level2">
 <h2>Confusion Matrix</h2>
 <pre class="r"><code>confusionMatrix(as.factor(knnpred_substance),
@@ -432,31 +509,30 @@ summary(knn_prob_substance)</code></pre>
 <pre><code>## Confusion Matrix and Statistics
 ## 
 ##           Reference
-## Prediction      0      1
-##          0 117016  52982
-##          1  25221  11665
+## Prediction     0     1
+##          0 13515  6006
+##          1   790   377
 ##                                           
-##                Accuracy : 0.622           
-##                  95% CI : (0.6199, 0.6241)
-##     No Information Rate : 0.6875          
+##                Accuracy : 0.6715          
+##                  95% CI : (0.6651, 0.6779)
+##     No Information Rate : 0.6915          
 ##     P-Value [Acc &gt; NIR] : 1               
 ##                                           
-##                   Kappa : 0.0035          
+##                   Kappa : 0.005           
 ##                                           
 ##  Mcnemar&#39;s Test P-Value : &lt;2e-16          
 ##                                           
-##             Sensitivity : 0.18044         
-##             Specificity : 0.82268         
-##          Pos Pred Value : 0.31624         
-##          Neg Pred Value : 0.68834         
-##              Prevalence : 0.31248         
-##          Detection Rate : 0.05638         
-##    Detection Prevalence : 0.17829         
-##       Balanced Accuracy : 0.50156         
+##             Sensitivity : 0.05906         
+##             Specificity : 0.94477         
+##          Pos Pred Value : 0.32305         
+##          Neg Pred Value : 0.69233         
+##              Prevalence : 0.30854         
+##          Detection Rate : 0.01822         
+##    Detection Prevalence : 0.05641         
+##       Balanced Accuracy : 0.50192         
 ##                                           
 ##        &#39;Positive&#39; Class : 1               
 ## </code></pre>
-<p>With k=5 -&gt; Kappa : 0.0035</p>
 </div>
 </div>
 <div id="save-probabilities" class="section level1">
