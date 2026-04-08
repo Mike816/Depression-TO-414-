@@ -1,0 +1,35 @@
+---
+title: "correlationgraph"
+output: html_document
+---
+
+# import data
+
+```{r}
+depression <- readRDS("train_original.rds")
+str(depression)
+```
+
+```{r}
+library(ggcorrplot)   # or use corrplot
+
+# Convert all factors to numeric codes
+dep_num <- data.frame(lapply(depression, function(x) {
+  if (is.factor(x)) as.integer(x) else x
+}))
+
+# Compute Spearman correlation matrix
+cor_mat <- cor(dep_num, method = "spearman", use = "pairwise.complete.obs")
+
+# Option 1: ggcorrplot (ggplot2-based, recommended)
+ggcorrplot(cor_mat,
+           method = "square",
+           type = "full",         # or "lower" / "upper" for triangle
+           lab = TRUE,            # show correlation values
+           lab_size = 2.5,
+           colors = c("#436db5", "white", "#c03030"),
+           tl.cex = 9,
+           title = "Spearman Correlation Matrix")
+
+```
+
