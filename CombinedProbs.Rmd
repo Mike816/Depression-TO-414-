@@ -50,6 +50,7 @@ stack_df <- data.frame(
   actual = as.factor(y_true)
 )
 
+saveRDS(stack_df, "depression_stacked_data.rds")
 # Check the numeric spread of your experts
 summary(stack_df)
 

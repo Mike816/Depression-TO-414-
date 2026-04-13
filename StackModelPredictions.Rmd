@@ -1,0 +1,62 @@
+---
+title: "StackModelPredictions"
+author: "Daniel Myung"
+date: "2026-04-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, cache= TRUE}
+# --- Level 1 Meta-Model Evaluation ---
+library(caret)
+library(C50)
+library(randomForest)
+
+# 1. Load the 30% Stacked Test Partition
+# This is the 'holdout' data containing expert probabilities the meta-model hasn't seen
+stack_test <- readRDS("depression_stack_test.rds")
+
+# 2. Load the Level 1 Meta-Models
+m_meta_tree <- readRDS("depression_meta_model_tree.rds")
+m_meta_rf    <- readRDS("depression_meta_model_rf.rds")
+
+# Ensure the actual response is a factor for the Confusion Matrix
+# We use 'actual' which we defined in the stacking step
+actual <- as.factor(stack_test$actual)
+
+# 3. Generate Meta-Predictions & Confusion Matrices
+# Tree Meta-Model (Uses the 4:1 Cost Matrix logic)
+pred_tree <- predict(m_meta_tree, stack_test)
+cm_tree   <- confusionMatrix(pred_tree, actual, positive = "1")
+
+# Random Forest Meta-Model (Ensemble of Experts)
+pred_rf <- predict(m_meta_rf, stack_test)
+cm_rf   <- confusionMatrix(pred_rf, actual, positive = "1")
+
+# 4. Display Results for Comparison
+cat("--- LEVEL 1: C5.0 META-TREE (Depression) ---\n")
+print(cm_tree$table)
+cat("Kappa:", round(cm_tree$overall["Kappa"], 4), "\n")
+cat("Sensitivity (Mental Illness):", round(cm_tree$byClass["Sensitivity"], 4), "\n\n")
+
+cat("--- LEVEL 1: RANDOM FOREST META-MODEL (Depression) ---\n")
+print(cm_rf$table)
+cat("Kappa:", round(cm_rf$overall["Kappa"], 4), "\n")
+cat("Sensitivity (Mental Illness):", round(cm_rf$byClass["Sensitivity"], 4), "\n")
+
+# 5. Save Final Metrics Table
+# This will be the centerpiece of your final report with Mike
+stacked_metrics <- data.frame(
+  Model    = c("STACKED_Tree", "STACKED_RF"),
+  Accuracy = c(cm_tree$overall["Accuracy"], cm_rf$overall["Accuracy"]),
+  Kappa    = c(cm_tree$overall["Kappa"], cm_rf$overall["Kappa"]),
+  Sens     = c(cm_tree$byClass["Sensitivity"], cm_rf$byClass["Sensitivity"]),
+  Spec     = c(cm_tree$byClass["Specificity"], cm_rf$byClass["Specificity"])
+)
+
+saveRDS(stacked_metrics, "depression_stacked_metrics.rds")
+print(stacked_metrics)
+```

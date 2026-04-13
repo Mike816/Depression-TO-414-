@@ -1,0 +1,53 @@
+---
+title: "SecondSplitData"
+author: "Daniel Myung"
+date: "2026-04-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, cache= TRUE}
+# --- Stacked Data Partitioning ---
+
+# 1. Load the unified stacked data (the 'Council of Experts' predictions)
+# Assuming you named your combined file 'depression_stacked_data.rds'
+stack_df <- readRDS("depression_stacked_data.rds")
+
+# 2. Set the seed for reproducibility 
+# Keeping the same seed used in previous scripts to maintain data integrity
+set.seed(12345)
+
+# 3. Partitioning: 70% Training / 30% Testing
+# This 70% split gives the meta-model enough examples to see which 
+# expert (SVM, KNN, or C5.0) is most reliable.
+train_size <- floor(0.70 * nrow(stack_df))
+
+# Create a random vector of indices for the training set
+train_indices <- sample(seq_len(nrow(stack_df)), size = train_size)
+
+# 4. Break the data frame into the final two pieces
+stack_train <- stack_df[train_indices, ]
+stack_test  <- stack_df[-train_indices, ]
+
+# 5. Save the final deliverables for the Meta-Model
+saveRDS(stack_train, "depression_stack_train.rds")
+saveRDS(stack_test, "depression_stack_test.rds")
+
+# --- VERIFICATION & BALANCING ---
+
+# Verify that the split matches our 70/30 target
+cat("Training set rows:", nrow(stack_train), "\n")
+cat("Test set rows:", nrow(stack_test), "\n")
+
+# Check the distribution of 'History.of.Mental.Illness' (actual)
+# It's crucial that the ~30% 'Yes' rate is consistent in both sets.
+cat("\n--- Training Set Class Balance ---\n")
+# Assuming 'actual' is the name of your ground-truth column in the stack_df
+print(prop.table(table(stack_train$actual)))
+
+cat("\n--- Test Set Class Balance ---\n")
+print(prop.table(table(stack_test$actual)))
+```
