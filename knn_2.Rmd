@@ -1,0 +1,47 @@
+---
+title: "knn_2"
+author: "Daniel Myung"
+date: "2026-04-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(class)
+library(caret)
+train_dummy <- readRDS("train_dummy.rds")
+test_dummy  <- readRDS("test_dummy.rds")
+
+# Verification: Ensure target classes are factors
+train_dummy$history_of_mental_illness_yes <- as.factor(train_dummy$history_of_mental_illness_yes)
+test_dummy$history_of_mental_illness_yes  <- as.factor(test_dummy$history_of_mental_illness_yes)
+
+# Instead of ncol-3, let's use name-based exclusion for safety
+target_name_mental <- "history_of_mental_illness_yes"
+# We exclude both 'yes' and 'no' dummy columns so the model doesn't cheat
+exclude_cols <- c("history_of_mental_illness_yes", "history_of_mental_illness_no")
+
+train_x <- train_dummy[, !(names(train_dummy) %in% exclude_cols)]
+test_x  <- test_dummy[, !(names(test_dummy) %in% exclude_cols)]
+train_y <- train_dummy[[target_name_mental]]
+
+set.seed(12345) # For ties in KNN
+knnpred_mental <- knn(train = train_x,
+                      test  = test_x,
+                      cl    = train_y,
+                      k     = 15, prob = TRUE)
+
+# Extract probabilities
+p_mental <- attr(knnpred_mental, "prob")
+# Adjusting: knn 'prob' returns the proportion of votes for the WINNING class. 
+# We want the prob specifically for class '1'.
+knn_prob_mental <- ifelse(knnpred_mental == "1", p_mental, 1 - p_mental)
+
+confusionMatrix(knnpred_mental, test_dummy[[target_name_mental]], positive = "1")
+
+saveRDS(knn_prob_mental, "knn_prob_mental_illness.rds")
+saveRDS(knnpred_mental, "knn_pred_mental_illness.rds")
+```

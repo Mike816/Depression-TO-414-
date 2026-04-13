@@ -28,18 +28,18 @@ library(kernlab)
 #aplacedotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "laplacedot")
 #besseldotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "besseldot")
 #anovadotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "anovadot")
-splinedotmodel <- ksvm(history_of_mental_illness_yes ~ ., data = train, kernel = "splinedot", prob.model = TRUE)
-#rbfdotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "rbfdot")
+#splinedotmodel <- ksvm(as.factor(history_of_mental_illness_yes) ~ ., data = train, kernel = "splinedot", prob.model = TRUE)
+rbfdotmodel <- ksvm(as.factor(history_of_mental_illness_yes) ~ ., data = train, kernel = "rbfdot", prob.model = TRUE)
 
 
-#saveRDS(rbfdotmodel, file = "rbf_model.rds")
+saveRDS(rbfdotmodel, file = "rbf_model.rds")
 #saveRDS(tanhdotmodel, file = "tanhdot.rds")
 #saveRDS(polydotmodel, file = "polydot.rds")
 #saveRDS(vanilladotmodel, file = "vanilla.rds")
 #saveRDS(laplacedotmodel, file = "laplace.rds")
 #saveRDS(besseldotmodel, file = "bessel.rds")
 #saveRDS(anovadotmodel, file = "anova.rds")
-saveRDS(splinedotmodel, file = "splinedot.rds")
+#saveRDS(splinedotmodel, file = "splinedot.rds")
 
 
 
@@ -50,8 +50,8 @@ saveRDS(splinedotmodel, file = "splinedot.rds")
 #l_pred <- predict(aplacedotmodel, test)
 #b_pred <- predict(besseldotmodel, test)
 #a_pred <- predict(anovadotmodel, test)
-s_pred <- predict(splinedotmodel, test)
-#rbf_pred  <- predict(rbfdotmodel, test)
+#s_pred <- predict(splinedotmodel, test)
+rbf_pred  <- predict(rbfdotmodel, test)
 
 
 #table(v_pred, tele_test$y)
@@ -66,14 +66,14 @@ library(caret)
 #confusionMatrix(as.factor(l_pred), as.factor(test$History.of.Mental.Illness), positive = "Yes")
 #confusionMatrix(as.factor(b_pred), as.factor(test$History.of.Mental.Illness), positive = "Yes")
 #confusionMatrix(as.factor(a_pred), as.factor(test$History.of.Mental.Illness), positive = "Yes")
-confusionMatrix(as.factor(s_pred), as.factor(test$history_of_mental_illness_yes), positive = "Yes")
-#confusionMatrix(as.factor(rbf_pred), as.factor(test$History.of.Mental.Illness), positive = "Yes")
+#confusionMatrix(as.factor(s_pred), as.factor(test$history_of_mental_illness_yes), positive = "Yes")
+confusionMatrix(as.factor(rbf_pred), as.factor(test$history_of_mental_illness_yes), positive = "1")
 ```
 ```{r}
 library(kernlab)
 
 # 1. Load the model and test data
-splinedotmodel <- readRDS("splinedot.rds")
+rbfdotmodel <- readRDS("rbf_model.rds")
 test_dummy <- readRDS("test_dummy.rds")
 
 # 2. Identify target columns to remove
@@ -83,17 +83,17 @@ target_cols <- c("history_of_mental_illness_no", "history_of_mental_illness_yes"
 test_features <- test_dummy[, !(names(test_dummy) %in% target_cols)]
 
 # 3. Generate probabilities 
-p_spline_matrix <- predict(splinedotmodel, 
+p_rbf_matrix <- predict(rbfdotmodel, 
                            test_features, 
                            type = "probabilities")
 
 # 4. Extract the column for the positive class
 # Since your target was 'history_of_mental_illness_yes', 
 # the matrix columns are likely "1" (for yes) and "0" (for no).
-p_spline_vector <- p_spline_matrix[, "1"] 
+p_rbf_vector <- p_rbf_matrix[, "1"] 
 
 # 5. Save the vector
-saveRDS(p_spline_vector, "spline_prob_mental_illness.rds")
+saveRDS(p_rbf_vector, "rbf_prob_mental_illness.rds")
 ```
 
 # summary 

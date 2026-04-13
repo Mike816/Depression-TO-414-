@@ -1,0 +1,56 @@
+---
+title: "DT2"
+author: "Daniel Myung"
+date: "2026-04-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, cache= TRUE}
+library(C50)
+library(caret)
+
+# Using the original data as requested
+train <- readRDS("train_original.rds")
+test <- readRDS("test_original.rds")
+
+# C5.0 requires the target to be a factor
+train$History.of.Mental.Illness <- as.factor(train$History.of.Mental.Illness)
+test$History.of.Mental.Illness <- as.factor(test$History.of.Mental.Illness)
+
+# Define the features (X) and the target (y)
+# We exclude the target column from the training features
+features <- train[, names(train) != "History.of.Mental.Illness"]
+target   <- train$History.of.Mental.Illness
+
+# Create the C5.0 model
+
+c50_model <- C5.0(features, target, trials = 1)
+
+# If you want to be explicit about the package:
+# c50_model <- C50::C5.0(features, target, trials = 1)
+
+summary(c50_model)
+
+# Note: C5.0 trees can get very large, plot may be dense
+plot(c50_model)
+
+# Predict Class
+c50_pred <- predict(c50_model, test, type = "class")
+
+# Predict Probabilities (for ROC curves later)
+c50_prob <- predict(c50_model, test, type = "prob")
+
+head(c50_pred)
+head(c50_prob)
+
+confusionMatrix(c50_pred, test$History.of.Mental.Illness, positive = "Yes")
+
+saveRDS(c50_model, file = "c50_model.rds")
+saveRDS(c50_pred, file = "c50_pred.rds")
+# Saving the 'Yes' probability vector specifically for consistency with your other models
+saveRDS(c50_prob[, "Yes"], file = "c50_prob_mental_illness.rds")
+```
