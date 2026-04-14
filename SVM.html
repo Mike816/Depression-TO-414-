@@ -353,134 +353,135 @@ display: none;
 </div>
 
 
-<div id="import-data" class="section level1">
-<h1>import data</h1>
-<pre class="r"><code>train &lt;- readRDS(&quot;train_original.rds&quot;)
-
-summary(train)</code></pre>
-<pre><code>##       Age         Marital.Status           Education.Level Number.of.Children
-##  Min.   :18.00   Divorced: 1596   Associate Degree :4071   Min.   :0.000     
-##  1st Qu.:33.00   Married :12032   Bachelor&#39;s Degree:6142   1st Qu.:0.000     
-##  Median :49.00   Single  : 3640   High School      :5957   Median :1.000     
-##  Mean   :49.08   Widowed : 3420   Master&#39;s Degree  :3650   Mean   :1.292     
-##  3rd Qu.:65.00                    PhD              : 868   3rd Qu.:2.000     
-##  Max.   :80.00                                             Max.   :4.000     
-##     Smoking.Status  Physical.Activity.Level  Employment.Status
-##  Current   : 2465   Active   :3987          Employed  :13233  
-##  Former    : 5809   Moderate :7807          Unemployed: 7455  
-##  Non-smoker:12414   Sedentary:8894                            
-##                                                               
-##                                                               
-##                                                               
-##      Income          Alcohol.Consumption   Dietary.Habits Sleep.Patterns
-##  Min.   :     5.11   High    :4976       Healthy  :3557   Fair:9884     
-##  1st Qu.: 20698.78   Low     :7013       Moderate :8538   Good:4388     
-##  Median : 37599.46   Moderate:8699       Unhealthy:8593   Poor:6416     
-##  Mean   : 50611.94                                                      
-##  3rd Qu.: 76522.85                                                      
-##  Max.   :209968.73                                                      
-##  History.of.Mental.Illness History.of.Substance.Abuse
-##  No :14339                 No :14225                 
-##  Yes: 6349                 Yes: 6463                 
-##                                                      
-##                                                      
-##                                                      
-##                                                      
-##  Family.History.of.Depression Chronic.Medical.Conditions
-##  No :15196                    No :13824                 
-##  Yes: 5492                    Yes: 6864                 
-##                                                         
-##                                                         
-##                                                         
-## </code></pre>
-<pre class="r"><code>test &lt;- readRDS(&quot;test_original.rds&quot;)</code></pre>
 <pre class="r"><code>library(kernlab)
+library(caret)
 
+# 1. Load your pre-split Normalized/Dummy Data
+train_dummy &lt;- readRDS(&quot;train_dummy.rds&quot;)
+test_dummy  &lt;- readRDS(&quot;test_dummy.rds&quot;)
 
-# radial basis rbfdot
-#tanhdotmodel &lt;- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = &quot;tanhdot&quot;)
-#polydotmodel &lt;- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = &quot;polydot&quot;)
-#vanilladotmodel &lt;- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = &quot;vanilladot&quot;)
-#aplacedotmodel &lt;- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = &quot;laplacedot&quot;)
-#besseldotmodel &lt;- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = &quot;besseldot&quot;)
-#anovadotmodel &lt;- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = &quot;anovadot&quot;)
-splinedotmodel &lt;- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = &quot;splinedot&quot;)</code></pre>
-<pre><code>##  Setting default kernel parameters</code></pre>
-<pre class="r"><code>#rbfdotmodel &lt;- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = &quot;rbfdot&quot;)
+# --- DATA HEALTH CHECK ---
+# Identify columns with no variance or NaNs that break SVM math
+nan_cols &lt;- sapply(train_dummy, function(x) any(is.na(x)) || var(x) == 0)
 
+if(any(nan_cols)) {
+  cat(&quot;Removing constant/problematic columns:&quot;, paste(names(nan_cols)[nan_cols], collapse=&quot;, &quot;), &quot;\n&quot;)
+  train_dummy &lt;- train_dummy[, !nan_cols]
+  test_dummy  &lt;- test_dummy[, !nan_cols] 
+}
 
-#saveRDS(rbfdotmodel, file = &quot;rbf_model.rds&quot;)
-#saveRDS(tanhdotmodel, file = &quot;tanhdot.rds&quot;)
-#saveRDS(polydotmodel, file = &quot;polydot.rds&quot;)
-#saveRDS(vanilladotmodel, file = &quot;vanilla.rds&quot;)
-#saveRDS(laplacedotmodel, file = &quot;laplace.rds&quot;)
-#saveRDS(besseldotmodel, file = &quot;bessel.rds&quot;)
-#saveRDS(anovadotmodel, file = &quot;anova.rds&quot;)
-saveRDS(splinedotmodel, file = &quot;splinedot.rds&quot;)
+# 2. Define Kernel List
+kernels &lt;- c(&quot;rbfdot&quot;, &quot;vanilladot&quot;, &quot;polydot&quot;, &quot;tanhdot&quot;, &quot;laplacedot&quot;, &quot;anovadot&quot;, &quot;besseldot&quot;)
 
+# 3. Training and Saving Loop
+set.seed(12345)
+for (k in kernels) {
+  model_name &lt;- paste0(&quot;svm_&quot;, gsub(&quot;dot&quot;, &quot;&quot;, k))
+  file_path &lt;- paste0(model_name, &quot;.rds&quot;)
+  
+  if (!file.exists(file_path)) {
+    cat(&quot;Training:&quot;, k, &quot;\n&quot;)
+    # prob.model = TRUE is critical for generating probabilities for stacking
+    m &lt;- ksvm(as.factor(history_of_mental_illness_yes) ~ ., 
+              data = train_dummy, 
+              kernel = k, 
+              prob.model = TRUE) 
+    saveRDS(m, file_path)
+  } else {
+    cat(&quot;Skipping:&quot;, k, &quot;(file already exists)\n&quot;)
+  }
+}</code></pre>
+<pre><code>## Training: rbfdot 
+## Training: vanilladot 
+##  Setting default kernel parameters  
+## maximum number of iterations reached 0.0007345829 0.000723697Training: polydot 
+##  Setting default kernel parameters  
+## maximum number of iterations reached 2.68223e-05 2.679505e-05Training: tanhdot 
+##  Setting default kernel parameters  
+## line search fails -0.0001802594 0.8116363 -0.005835684 -0.0001361069 7.831359e-11 3.963656e-08 -5.851822e-12Training: laplacedot 
+## Training: anovadot 
+##  Setting default kernel parameters  
+## Training: besseldot 
+##  Setting default kernel parameters</code></pre>
+<pre class="r"><code># 4. Loading and Evaluation (Categorical)
+evaluation_results &lt;- lapply(kernels, function(k) {
+  model_name &lt;- paste0(&quot;svm_&quot;, gsub(&quot;dot&quot;, &quot;&quot;, k))
+  m &lt;- readRDS(paste0(model_name, &quot;.rds&quot;))
+  
+  # Get class predictions
+  pred &lt;- predict(m, test_dummy)
+  
+  # Calculate metrics focusing on class &#39;1&#39; (Yes)
+  cm &lt;- confusionMatrix(as.factor(pred), 
+                        as.factor(test_dummy$history_of_mental_illness_yes), 
+                        positive = &quot;1&quot;)
+  
+  return(data.frame(
+    kernel = k, 
+    accuracy = cm$overall[&quot;Accuracy&quot;], 
+    kappa = cm$overall[&quot;Kappa&quot;],
+    sensitivity = cm$byClass[&quot;Sensitivity&quot;]
+  ))
+})
 
-
-
-#tanh_pred &lt;- predict(tanhdotmodel, test)
-#poly_pred &lt;- predict(polydotmodel, test)
-#v_pred &lt;- predict(vanilladotmodel, test)
-#l_pred &lt;- predict(aplacedotmodel, test)
-#b_pred &lt;- predict(besseldotmodel, test)
-#a_pred &lt;- predict(anovadotmodel, test)
-s_pred &lt;- predict(splinedotmodel, test)
-#rbf_pred  &lt;- predict(rbfdotmodel, test)
-
-
-#table(v_pred, tele_test$y)
-
-## NOT A BINARY PREDICTION, so don&#39;t use confusion matrix
-
-## this time, use confusion matrix because this is a binary prediction
-library(caret)</code></pre>
-<pre><code>## Warning: package &#39;caret&#39; was built under R version 4.5.3</code></pre>
-<pre><code>## Loading required package: ggplot2</code></pre>
+# 5. Display Summary Table
+tuning_summary &lt;- do.call(rbind, evaluation_results)
+print(tuning_summary)</code></pre>
+<pre><code>##               kernel  accuracy        kappa sensitivity
+## Accuracy      rbfdot 0.6908353  0.000000000   0.0000000
+## Accuracy1 vanilladot 0.6908353  0.000000000   0.0000000
+## Accuracy2    polydot 0.6908353  0.000000000   0.0000000
+## Accuracy3    tanhdot 0.5905356  0.029997666   0.3164478
+## Accuracy4 laplacedot 0.6908353  0.000000000   0.0000000
+## Accuracy5   anovadot 0.6908353  0.000000000   0.0000000
+## Accuracy6  besseldot 0.5760828 -0.001744898   0.2975297</code></pre>
+<pre class="r"><code># 6. Generate Probabilities with Detailed Diagnostics
+p_svm_list &lt;- lapply(kernels, function(k) {
+  model_name &lt;- paste0(&quot;svm_&quot;, gsub(&quot;dot&quot;, &quot;&quot;, k))
+  m &lt;- readRDS(paste0(model_name, &quot;.rds&quot;))
+  
+  # Use tryCatch to prevent &quot;atomic vector&quot; crashes and explain failures
+  prob_vector &lt;- tryCatch({
+    p &lt;- predict(m, test_dummy, type = &quot;probabilities&quot;)
+    p[, &quot;1&quot;] 
+    
+  }, error = function(e) {
+    cat(&quot;\n[FAILURE REPORT] Kernel:&quot;, k, &quot;\n&quot;)
+    
+    # Diagnostic 1: Missing Internal Model
+    if (is.null(m@prob.model) || length(m@prob.model) == 0) {
+      cat(&quot;  - Reason: The ksvm function failed to generate a sigmoid scaling model entirely.\n&quot;)
+    } 
+    # Diagnostic 2: Platt Scaling Non-Convergence (The Atomic Vector Error)
+    else if (is.atomic(m@prob.model[[1]])) {
+      cat(&quot;  - Reason: Platt Scaling failure. The algorithm could not fit a valid sigmoid curve\n&quot;)
+      cat(&quot;    to turn decision distances into probabilities. This is often caused by sparse data.\n&quot;)
+    }
+    cat(&quot;  - Technical Message:&quot;, conditionMessage(e), &quot;\n&quot;)
+    return(NULL)
+  })
+  return(prob_vector)
+})</code></pre>
 <pre><code>## 
-## Attaching package: &#39;ggplot2&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:kernlab&#39;:
-## 
-##     alpha</code></pre>
-<pre><code>## Loading required package: lattice</code></pre>
-<pre class="r"><code>#confusionMatrix(as.factor(tanh_pred), as.factor(test$History.of.Mental.Illness), positive = &quot;Yes&quot;)
-#confusionMatrix(as.factor(poly_pred), as.factor(test$History.of.Mental.Illness), positive = &quot;Yes&quot;)
-#confusionMatrix(as.factor(v_pred), as.factor(test$History.of.Mental.Illness), positive = &quot;Yes&quot;)
-#confusionMatrix(as.factor(l_pred), as.factor(test$History.of.Mental.Illness), positive = &quot;Yes&quot;)
-#confusionMatrix(as.factor(b_pred), as.factor(test$History.of.Mental.Illness), positive = &quot;Yes&quot;)
-#confusionMatrix(as.factor(a_pred), as.factor(test$History.of.Mental.Illness), positive = &quot;Yes&quot;)
-confusionMatrix(as.factor(s_pred), as.factor(test$History.of.Mental.Illness), positive = &quot;Yes&quot;)</code></pre>
-<pre><code>## Confusion Matrix and Statistics
-## 
-##           Reference
-## Prediction    No   Yes
-##        No  10780  4398
-##        Yes  3586  1924
-##                                           
-##                Accuracy : 0.6141          
-##                  95% CI : (0.6074, 0.6207)
-##     No Information Rate : 0.6944          
-##     P-Value [Acc &gt; NIR] : 1               
-##                                           
-##                   Kappa : 0.0568          
-##                                           
-##  Mcnemar&#39;s Test P-Value : &lt;2e-16          
-##                                           
-##             Sensitivity : 0.3043          
-##             Specificity : 0.7504          
-##          Pos Pred Value : 0.3492          
-##          Neg Pred Value : 0.7102          
-##              Prevalence : 0.3056          
-##          Detection Rate : 0.0930          
-##    Detection Prevalence : 0.2663          
-##       Balanced Accuracy : 0.5274          
-##                                           
-##        &#39;Positive&#39; Class : Yes             
-## </code></pre>
-<pre class="r"><code>#confusionMatrix(as.factor(rbf_pred), as.factor(test$History.of.Mental.Illness), positive = &quot;Yes&quot;)</code></pre>
-</div>
+## [FAILURE REPORT] Kernel: tanhdot 
+##   - Reason: Platt Scaling failure. The algorithm could not fit a valid sigmoid curve
+##     to turn decision distances into probabilities. This is often caused by sparse data.
+##   - Technical Message: $ operator is invalid for atomic vectors</code></pre>
+<pre class="r"><code>names(p_svm_list) &lt;- kernels
+
+# 7. Final Selection for Stacked Model
+# Ensure we pick a kernel that actually has a working probability model
+valid_mask &lt;- sapply(p_svm_list, function(x) !is.null(x))
+valid_summary &lt;- tuning_summary[valid_mask, ]
+
+if(nrow(valid_summary) &gt; 0) {
+  # Select best kernel based on Sensitivity to help our imbalanced classes
+  best_kernel_name &lt;- valid_summary$kernel[which.max(valid_summary$sensitivity)]
+  
+  # Save the best probability vector for the final Meta-Model script
+  p_best &lt;- p_svm_list[[best_kernel_name]]
+  saveRDS(p_best, &quot;best_svm_prob_mental_illness.rds&quot;)
+}</code></pre>
 <div id="summary" class="section level1">
 <h1>summary</h1>
 <p>After testing all the models, splinedot was the best, both in terms

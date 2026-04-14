@@ -10,20 +10,6 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
-# Create a named list of your variables
-check_lengths <- list(
-  logreg = p_logreg,
-  knn    = p_knn,
-  ann    = p_ann,
-  svm    = p_svm,
-  tree   = p_tree,
-  actual = y_true
-)
-
-# Check the length of each
-sapply(check_lengths, length)
-```
 
 ```{r}
 # Load the dummy test set to get the actual outcomes
@@ -37,7 +23,7 @@ y_true <- test_dummy[, ncol(test_dummy) - 3]
 p_logreg <- readRDS("glm_prob.rds")
 p_knn    <- readRDS("knn_prob_mental_illness.rds")
 p_ann    <- readRDS("ann_prob_mental_illness.rds")
-p_svm    <- readRDS("rbf_prob_mental_illness.rds")
+p_svm    <- readRDS("best_svm_prob_mental_illness.rds")
 p_tree   <- readRDS("c50_prob_mental_illness.rds")
 
 # Combine the vectors and the actual response

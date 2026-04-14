@@ -3,97 +3,115 @@ title: "SVM"
 output: html_document
 ---
 
-# import data
-```{r}
-train <- readRDS("train_dummy.rds")
-
-summary(train)
-```
-
-
-```{r}
-test <- readRDS("test_dummy.rds")
-```
-
 
 ```{r, cache=TRUE}
 
 library(kernlab)
-
-
-# radial basis rbfdot
-#tanhdotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "tanhdot")
-#polydotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "polydot")
-#vanilladotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "vanilladot")
-#aplacedotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "laplacedot")
-#besseldotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "besseldot")
-#anovadotmodel <- ksvm(History.of.Mental.Illness ~ ., data = train, kernel = "anovadot")
-#splinedotmodel <- ksvm(as.factor(history_of_mental_illness_yes) ~ ., data = train, kernel = "splinedot", prob.model = TRUE)
-rbfdotmodel <- ksvm(as.factor(history_of_mental_illness_yes) ~ ., data = train, kernel = "rbfdot", prob.model = TRUE)
-
-
-saveRDS(rbfdotmodel, file = "rbf_model.rds")
-#saveRDS(tanhdotmodel, file = "tanhdot.rds")
-#saveRDS(polydotmodel, file = "polydot.rds")
-#saveRDS(vanilladotmodel, file = "vanilla.rds")
-#saveRDS(laplacedotmodel, file = "laplace.rds")
-#saveRDS(besseldotmodel, file = "bessel.rds")
-#saveRDS(anovadotmodel, file = "anova.rds")
-#saveRDS(splinedotmodel, file = "splinedot.rds")
-
-
-
-
-#tanh_pred <- predict(tanhdotmodel, test)
-#poly_pred <- predict(polydotmodel, test)
-#v_pred <- predict(vanilladotmodel, test)
-#l_pred <- predict(aplacedotmodel, test)
-#b_pred <- predict(besseldotmodel, test)
-#a_pred <- predict(anovadotmodel, test)
-#s_pred <- predict(splinedotmodel, test)
-rbf_pred  <- predict(rbfdotmodel, test)
-
-
-#table(v_pred, tele_test$y)
-
-## NOT A BINARY PREDICTION, so don't use confusion matrix
-
-## this time, use confusion matrix because this is a binary prediction
 library(caret)
-#confusionMatrix(as.factor(tanh_pred), as.factor(test$History.of.Mental.Illness), positive = "Yes")
-#confusionMatrix(as.factor(poly_pred), as.factor(test$History.of.Mental.Illness), positive = "Yes")
-#confusionMatrix(as.factor(v_pred), as.factor(test$History.of.Mental.Illness), positive = "Yes")
-#confusionMatrix(as.factor(l_pred), as.factor(test$History.of.Mental.Illness), positive = "Yes")
-#confusionMatrix(as.factor(b_pred), as.factor(test$History.of.Mental.Illness), positive = "Yes")
-#confusionMatrix(as.factor(a_pred), as.factor(test$History.of.Mental.Illness), positive = "Yes")
-#confusionMatrix(as.factor(s_pred), as.factor(test$history_of_mental_illness_yes), positive = "Yes")
-confusionMatrix(as.factor(rbf_pred), as.factor(test$history_of_mental_illness_yes), positive = "1")
-```
-```{r}
-library(kernlab)
 
-# 1. Load the model and test data
-rbfdotmodel <- readRDS("rbf_model.rds")
-test_dummy <- readRDS("test_dummy.rds")
+# 1. Load your pre-split Normalized/Dummy Data
+train_dummy <- readRDS("train_dummy.rds")
+test_dummy  <- readRDS("test_dummy.rds")
 
-# 2. Identify target columns to remove
-# Because you dummied the data, you likely have TWO columns for mental illness.
-# We must remove BOTH so the model doesn't see the answer.
-target_cols <- c("history_of_mental_illness_no", "history_of_mental_illness_yes")
-test_features <- test_dummy[, !(names(test_dummy) %in% target_cols)]
+# --- DATA HEALTH CHECK ---
+# Identify columns with no variance or NaNs that break SVM math
+nan_cols <- sapply(train_dummy, function(x) any(is.na(x)) || var(x) == 0)
 
-# 3. Generate probabilities 
-p_rbf_matrix <- predict(rbfdotmodel, 
-                           test_features, 
-                           type = "probabilities")
+if(any(nan_cols)) {
+  cat("Removing constant/problematic columns:", paste(names(nan_cols)[nan_cols], collapse=", "), "\n")
+  train_dummy <- train_dummy[, !nan_cols]
+  test_dummy  <- test_dummy[, !nan_cols] 
+}
 
-# 4. Extract the column for the positive class
-# Since your target was 'history_of_mental_illness_yes', 
-# the matrix columns are likely "1" (for yes) and "0" (for no).
-p_rbf_vector <- p_rbf_matrix[, "1"] 
+# 2. Define Kernel List
+kernels <- c("rbfdot", "vanilladot", "polydot", "tanhdot", "laplacedot", "anovadot", "besseldot")
 
-# 5. Save the vector
-saveRDS(p_rbf_vector, "rbf_prob_mental_illness.rds")
+# 3. Training and Saving Loop
+set.seed(12345)
+for (k in kernels) {
+  model_name <- paste0("svm_", gsub("dot", "", k))
+  file_path <- paste0(model_name, ".rds")
+  
+  if (!file.exists(file_path)) {
+    cat("Training:", k, "\n")
+    # prob.model = TRUE is critical for generating probabilities for stacking
+    m <- ksvm(as.factor(history_of_mental_illness_yes) ~ ., 
+              data = train_dummy, 
+              kernel = k, 
+              prob.model = TRUE) 
+    saveRDS(m, file_path)
+  } else {
+    cat("Skipping:", k, "(file already exists)\n")
+  }
+}
+
+# 4. Loading and Evaluation (Categorical)
+evaluation_results <- lapply(kernels, function(k) {
+  model_name <- paste0("svm_", gsub("dot", "", k))
+  m <- readRDS(paste0(model_name, ".rds"))
+  
+  # Get class predictions
+  pred <- predict(m, test_dummy)
+  
+  # Calculate metrics focusing on class '1' (Yes)
+  cm <- confusionMatrix(as.factor(pred), 
+                        as.factor(test_dummy$history_of_mental_illness_yes), 
+                        positive = "1")
+  
+  return(data.frame(
+    kernel = k, 
+    accuracy = cm$overall["Accuracy"], 
+    kappa = cm$overall["Kappa"],
+    sensitivity = cm$byClass["Sensitivity"]
+  ))
+})
+
+# 5. Display Summary Table
+tuning_summary <- do.call(rbind, evaluation_results)
+print(tuning_summary)
+
+# 6. Generate Probabilities with Detailed Diagnostics
+p_svm_list <- lapply(kernels, function(k) {
+  model_name <- paste0("svm_", gsub("dot", "", k))
+  m <- readRDS(paste0(model_name, ".rds"))
+  
+  # Use tryCatch to prevent "atomic vector" crashes and explain failures
+  prob_vector <- tryCatch({
+    p <- predict(m, test_dummy, type = "probabilities")
+    p[, "1"] 
+    
+  }, error = function(e) {
+    cat("\n[FAILURE REPORT] Kernel:", k, "\n")
+    
+    # Diagnostic 1: Missing Internal Model
+    if (is.null(m@prob.model) || length(m@prob.model) == 0) {
+      cat("  - Reason: The ksvm function failed to generate a sigmoid scaling model entirely.\n")
+    } 
+    # Diagnostic 2: Platt Scaling Non-Convergence (The Atomic Vector Error)
+    else if (is.atomic(m@prob.model[[1]])) {
+      cat("  - Reason: Platt Scaling failure. The algorithm could not fit a valid sigmoid curve\n")
+      cat("    to turn decision distances into probabilities. This is often caused by sparse data.\n")
+    }
+    cat("  - Technical Message:", conditionMessage(e), "\n")
+    return(NULL)
+  })
+  return(prob_vector)
+})
+names(p_svm_list) <- kernels
+
+# 7. Final Selection for Stacked Model
+# Ensure we pick a kernel that actually has a working probability model
+valid_mask <- sapply(p_svm_list, function(x) !is.null(x))
+valid_summary <- tuning_summary[valid_mask, ]
+
+if(nrow(valid_summary) > 0) {
+  # Select best kernel based on Sensitivity to help our imbalanced classes
+  best_kernel_name <- valid_summary$kernel[which.max(valid_summary$sensitivity)]
+  
+  # Save the best probability vector for the final Meta-Model script
+  p_best <- p_svm_list[[best_kernel_name]]
+  saveRDS(p_best, "best_svm_prob_mental_illness.rds")
+}
 ```
 
 # summary 

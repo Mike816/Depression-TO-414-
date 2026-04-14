@@ -34,6 +34,14 @@ knnpred_mental <- knn(train = train_x,
                       cl    = train_y,
                       k     = 15, prob = TRUE)
 
+knn_model_fit <- knn3(x = train_x, 
+                      y = train_y, 
+                      k = 15)
+
+# 2. SAVE THIS OBJECT
+# This is what you will load into your interactive Shiny/RMD file
+saveRDS(knn_model_fit, "knn_model_object.rds")
+
 # Extract probabilities
 p_mental <- attr(knnpred_mental, "prob")
 # Adjusting: knn 'prob' returns the proportion of votes for the WINNING class. 
