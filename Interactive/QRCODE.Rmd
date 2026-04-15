@@ -1,0 +1,26 @@
+---
+title: "QRCODE"
+author: "Daniel Myung"
+date: "2026-04-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Install the package if you haven't yet: install.packages("qrcode")
+library(qrcode)
+
+# 1. Paste your live Shiny URL here
+app_url <- "https://j33c4y-daniel-myung.shinyapps.io/Interactive/"
+
+# 2. Generate the QR object
+# Use a high error correction level ('H') so it scans easily even on a screen
+my_qr <- qr_code(app_url, ecl = "H")
+
+# 3. Display the code
+# This will render directly in your knitted HTML document
+plot(my_qr)
+```

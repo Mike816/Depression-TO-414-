@@ -1,0 +1,12 @@
+name: Interactive
+title: Interactive
+username: j33c4y-daniel-myung
+account: j33c4y-daniel-myung
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 17136548
+bundleId: 11852245
+url: https://j33c4y-daniel-myung.shinyapps.io/Interactive/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
