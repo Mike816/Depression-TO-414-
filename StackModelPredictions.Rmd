@@ -60,3 +60,83 @@ stacked_metrics <- data.frame(
 saveRDS(stacked_metrics, "depression_stacked_metrics.rds")
 print(stacked_metrics)
 ```
+
+```{r}
+library(caret)
+library(kernlab) # For SVM
+library(C50)     # For Tree
+library(nnet)    # For ANN
+library(class)   # For KNN
+
+# 1. LOAD THE MODELS
+m_glm  <- readRDS("glm_model.rds")
+m_knn  <- readRDS("knn_model_object.rds")
+m_ann  <- readRDS("ann.rds")
+m_svm  <- readRDS("svm_rbf.rds")
+m_tree <- readRDS("c50_model.rds")
+
+# 2. LOAD THE TEST DATA
+# 'test_raw' (Factors/Raw Scales) for GLM and Tree
+# 'test_dummy' (Normalized/Dummified) for KNN, ANN, and SVM
+test_raw   <- readRDS("test_original.rds")
+test_dummy <- readRDS("test_dummy.rds")
+
+# Ensure target variables are factors
+# Check your specific column names if these throw errors!
+actual_raw   <- as.factor(test_raw$History.of.Mental.Illness)
+actual_dummy <- as.factor(test_dummy$history_of_mental_illness_yes)
+
+# ---------------------------------------------------------
+# 1. LOGISTIC REGRESSION (Using Raw Data)
+# ---------------------------------------------------------
+# Predict probability, then convert to Yes/No based on 0.5 threshold
+prob_glm <- predict(m_glm, test_raw, type = "response")
+pred_glm <- factor(ifelse(prob_glm > 0.5, "Yes", "No"), levels = c("No", "Yes"))
+
+cat("\n--- LOGISTIC REGRESSION ---\n")
+print(confusionMatrix(pred_glm, actual_raw, positive = "Yes"))
+
+# ---------------------------------------------------------
+# 2. K-NEAREST NEIGHBORS (Fixing the Dimension Error)
+# ---------------------------------------------------------
+m_knn <- readRDS("knn_model_object.rds")
+
+# We create a temporary version of the data without the target column
+# Replace 'history_of_mental_illness_yes' with whatever your target column name is
+test_features_only <- test_dummy[, !names(test_dummy) %in% c("history_of_mental_illness_yes")]
+
+# Now predict using the features only
+pred_knn <- predict(m_knn, test_features_only, type = "class")
+
+cat("\n--- K-NEAREST NEIGHBORS ---\n")
+print(confusionMatrix(pred_knn, actual_dummy, positive = "1"))
+
+# ---------------------------------------------------------
+# 3. ARTIFICIAL NEURAL NETWORK (Using Normalized Data)
+# ---------------------------------------------------------
+# nnet returns a single numeric column; convert to 0/1 at 0.5
+prob_ann <- predict(m_ann, test_dummy, type = "raw")
+pred_ann <- factor(ifelse(prob_ann > 0.5, "1", "0"), levels = c("0", "1"))
+
+cat("\n--- NEURAL NETWORK ---\n")
+print(confusionMatrix(pred_ann, actual_dummy, positive = "1"))
+
+# ---------------------------------------------------------
+# 4. SUPPORT VECTOR MACHINE (Using Normalized Data)
+# ---------------------------------------------------------
+# ksvm objects return class labels by default
+pred_svm <- predict(m_svm, test_dummy)
+
+cat("\n--- SUPPORT VECTOR MACHINE ---\n")
+print(confusionMatrix(pred_svm, actual_dummy, positive = "1"))
+
+# ---------------------------------------------------------
+# 5. C5.0 DECISION TREE (Using Raw Data)
+# ---------------------------------------------------------
+# Decision trees handle factors natively
+pred_tree <- predict(m_tree, test_raw, type = "class")
+
+cat("\n--- C5.0 DECISION TREE ---\n")
+print(confusionMatrix(pred_tree, actual_raw, positive = "Yes"))
+```
+

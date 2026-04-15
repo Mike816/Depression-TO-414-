@@ -13,7 +13,7 @@ depression <- readRDS("cleaned_depression.rds")
 # training testing split original data structure (no dummy)
 
 ```{r}
-
+set.seed(12345)
 ratio <- 0.5
 
 train_rows_og <- sample(1:nrow(depression), ratio*nrow(depression))
@@ -63,7 +63,6 @@ saveRDS(test_dummy, file = "test_dummy.rds")
 
 
 ```
-
 
 
 

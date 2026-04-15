@@ -363,29 +363,29 @@ test  &lt;- readRDS(&quot;test_original.rds&quot;)</code></pre>
 <h1>Exploratory check</h1>
 <pre class="r"><code>str(train)</code></pre>
 <pre><code>## &#39;data.frame&#39;:    20688 obs. of  15 variables:
-##  $ Age                         : int  34 54 61 62 47 30 72 58 47 66 ...
-##  $ Marital.Status              : Factor w/ 4 levels &quot;Divorced&quot;,&quot;Married&quot;,..: 1 2 2 2 2 2 2 2 1 2 ...
-##  $ Education.Level             : Factor w/ 5 levels &quot;Associate Degree&quot;,..: 1 4 4 2 2 2 3 1 3 1 ...
-##  $ Number.of.Children          : int  1 1 1 1 0 0 2 3 2 1 ...
-##  $ Smoking.Status              : Factor w/ 3 levels &quot;Current&quot;,&quot;Former&quot;,..: 3 3 3 3 2 2 3 3 3 3 ...
-##  $ Physical.Activity.Level     : Factor w/ 3 levels &quot;Active&quot;,&quot;Moderate&quot;,..: 2 2 2 2 3 1 3 3 3 3 ...
-##  $ Employment.Status           : Factor w/ 2 levels &quot;Employed&quot;,&quot;Unemployed&quot;: 1 1 2 1 1 2 2 1 2 2 ...
-##  $ Income                      : num  63839 107211 22052 55359 91215 ...
-##  $ Alcohol.Consumption         : Factor w/ 3 levels &quot;High&quot;,&quot;Low&quot;,&quot;Moderate&quot;: 3 2 1 3 3 2 1 3 3 3 ...
-##  $ Dietary.Habits              : Factor w/ 3 levels &quot;Healthy&quot;,&quot;Moderate&quot;,..: 2 2 1 2 2 1 2 3 3 3 ...
-##  $ Sleep.Patterns              : Factor w/ 3 levels &quot;Fair&quot;,&quot;Good&quot;,..: 2 1 3 1 2 2 3 1 3 3 ...
-##  $ History.of.Mental.Illness   : Factor w/ 2 levels &quot;No&quot;,&quot;Yes&quot;: 2 2 2 1 2 2 1 1 1 1 ...
-##  $ History.of.Substance.Abuse  : Factor w/ 2 levels &quot;No&quot;,&quot;Yes&quot;: 2 1 1 2 2 1 1 1 1 1 ...
-##  $ Family.History.of.Depression: Factor w/ 2 levels &quot;No&quot;,&quot;Yes&quot;: 1 2 1 2 1 2 1 1 2 1 ...
-##  $ Chronic.Medical.Conditions  : Factor w/ 2 levels &quot;No&quot;,&quot;Yes&quot;: 1 1 1 1 1 1 1 1 2 1 ...</code></pre>
+##  $ Age                         : int  47 49 43 52 21 27 28 53 62 53 ...
+##  $ Marital.Status              : Factor w/ 4 levels &quot;Divorced&quot;,&quot;Married&quot;,..: 2 1 4 1 3 3 3 2 2 2 ...
+##  $ Education.Level             : Factor w/ 5 levels &quot;Associate Degree&quot;,..: 2 4 3 3 3 1 1 2 3 1 ...
+##  $ Number.of.Children          : int  1 1 1 1 0 0 0 1 3 0 ...
+##  $ Smoking.Status              : Factor w/ 3 levels &quot;Current&quot;,&quot;Former&quot;,..: 3 3 3 3 3 3 2 2 3 3 ...
+##  $ Physical.Activity.Level     : Factor w/ 3 levels &quot;Active&quot;,&quot;Moderate&quot;,..: 2 1 1 3 2 1 1 2 3 2 ...
+##  $ Employment.Status           : Factor w/ 2 levels &quot;Employed&quot;,&quot;Unemployed&quot;: 1 2 1 2 1 1 1 2 2 1 ...
+##  $ Income                      : num  67017 9597 39625 2297 35624 ...
+##  $ Alcohol.Consumption         : Factor w/ 3 levels &quot;High&quot;,&quot;Low&quot;,&quot;Moderate&quot;: 3 1 2 1 2 2 3 2 2 2 ...
+##  $ Dietary.Habits              : Factor w/ 3 levels &quot;Healthy&quot;,&quot;Moderate&quot;,..: 2 1 2 2 2 2 3 2 2 3 ...
+##  $ Sleep.Patterns              : Factor w/ 3 levels &quot;Fair&quot;,&quot;Good&quot;,..: 3 3 2 3 1 2 2 1 3 1 ...
+##  $ History.of.Mental.Illness   : Factor w/ 2 levels &quot;No&quot;,&quot;Yes&quot;: 1 1 2 2 2 1 1 1 1 1 ...
+##  $ History.of.Substance.Abuse  : Factor w/ 2 levels &quot;No&quot;,&quot;Yes&quot;: 1 2 2 1 2 1 2 1 1 1 ...
+##  $ Family.History.of.Depression: Factor w/ 2 levels &quot;No&quot;,&quot;Yes&quot;: 1 1 2 2 1 1 1 1 1 1 ...
+##  $ Chronic.Medical.Conditions  : Factor w/ 2 levels &quot;No&quot;,&quot;Yes&quot;: 1 2 1 1 1 1 1 2 2 1 ...</code></pre>
 <pre class="r"><code>table(train$History.of.Mental.Illness)</code></pre>
 <pre><code>## 
 ##    No   Yes 
-## 14339  6349</code></pre>
+## 14316  6372</code></pre>
 <pre class="r"><code>prop.table(table(train$History.of.Mental.Illness))</code></pre>
 <pre><code>## 
 ##        No       Yes 
-## 0.6931071 0.3068929</code></pre>
+## 0.6919954 0.3080046</code></pre>
 </div>
 <div id="fit-glm-logistic-regression" class="section level1">
 <h1>Fit GLM (logistic regression)</h1>
@@ -401,39 +401,39 @@ summary(glm_model)</code></pre>
 ## 
 ## Coefficients:
 ##                                    Estimate Std. Error z value Pr(&gt;|z|)    
-## (Intercept)                      -7.028e-01  3.688e-02 -19.056  &lt; 2e-16 ***
-## Age                               4.713e-04  3.946e-04   1.195 0.232277    
-## Marital.StatusMarried             3.124e-02  1.875e-02   1.666 0.095737 .  
-## Marital.StatusSingle              4.366e-02  2.357e-02   1.852 0.064012 .  
-## Marital.StatusWidowed             1.071e-02  2.237e-02   0.478 0.632308    
-## Education.LevelBachelor&#39;s Degree -2.092e-01  1.539e-02 -13.588  &lt; 2e-16 ***
-## Education.LevelHigh School       -4.735e-02  1.409e-02  -3.360 0.000779 ***
-## Education.LevelMaster&#39;s Degree   -1.173e-01  1.874e-02  -6.259 3.86e-10 ***
-## Education.LevelPhD               -3.048e-02  3.063e-02  -0.995 0.319691    
-## Number.of.Children               -1.852e-03  4.736e-03  -0.391 0.695723    
-## Smoking.StatusFormer             -4.303e-02  1.788e-02  -2.407 0.016099 *  
-## Smoking.StatusNon-smoker         -3.330e-02  1.665e-02  -1.999 0.045565 *  
-## Physical.Activity.LevelModerate  -1.954e-02  1.452e-02  -1.346 0.178327    
-## Physical.Activity.LevelSedentary  8.787e-03  1.548e-02   0.568 0.570355    
-## Employment.StatusUnemployed       4.048e-01  1.647e-02  24.571  &lt; 2e-16 ***
-## Income                           -4.033e-06  2.314e-07 -17.426  &lt; 2e-16 ***
-## Alcohol.ConsumptionLow           -1.141e-02  1.310e-02  -0.871 0.383723    
-## Alcohol.ConsumptionModerate      -4.661e-03  1.255e-02  -0.371 0.710333    
-## Dietary.HabitsModerate           -4.536e-03  1.571e-02  -0.289 0.772826    
-## Dietary.HabitsUnhealthy          -9.159e-03  1.696e-02  -0.540 0.589251    
-## Sleep.PatternsGood               -6.367e-03  1.356e-02  -0.469 0.638796    
-## Sleep.PatternsPoor                3.254e-02  1.129e-02   2.882 0.003956 ** 
-## History.of.Substance.AbuseYes     1.606e-02  1.047e-02   1.535 0.124855    
-## Family.History.of.DepressionYes   2.576e-02  1.122e-02   2.295 0.021751 *  
-## Chronic.Medical.ConditionsYes    -1.800e-02  1.031e-02  -1.746 0.080818 .  
+## (Intercept)                      -8.309e-01  1.166e-01  -7.127 1.02e-12 ***
+## Age                              -4.899e-04  1.248e-03  -0.392  0.69471    
+## Marital.StatusMarried             1.137e-01  6.007e-02   1.892  0.05848 .  
+## Marital.StatusSingle              3.117e-02  7.506e-02   0.415  0.67793    
+## Marital.StatusWidowed             7.221e-02  7.115e-02   1.015  0.31015    
+## Education.LevelBachelor&#39;s Degree -1.536e-01  4.827e-02  -3.182  0.00146 ** 
+## Education.LevelHigh School        4.577e-02  4.438e-02   1.031  0.30237    
+## Education.LevelMaster&#39;s Degree   -1.216e-01  5.982e-02  -2.033  0.04208 *  
+## Education.LevelPhD               -6.338e-02  9.878e-02  -0.642  0.52110    
+## Number.of.Children               -1.409e-02  1.492e-02  -0.945  0.34477    
+## Smoking.StatusFormer             -2.837e-02  5.617e-02  -0.505  0.61355    
+## Smoking.StatusNon-smoker         -1.043e-02  5.252e-02  -0.199  0.84261    
+## Physical.Activity.LevelModerate  -3.715e-02  4.574e-02  -0.812  0.41670    
+## Physical.Activity.LevelSedentary -3.595e-02  4.871e-02  -0.738  0.46049    
+## Employment.StatusUnemployed       3.671e-01  5.235e-02   7.013 2.34e-12 ***
+## Income                           -3.942e-06  7.422e-07  -5.311 1.09e-07 ***
+## Alcohol.ConsumptionLow           -1.609e-02  4.159e-02  -0.387  0.69886    
+## Alcohol.ConsumptionModerate       2.939e-02  3.958e-02   0.743  0.45772    
+## Dietary.HabitsModerate            1.154e-01  5.028e-02   2.296  0.02168 *  
+## Dietary.HabitsUnhealthy           6.249e-02  5.419e-02   1.153  0.24885    
+## Sleep.PatternsGood                1.563e-02  4.279e-02   0.365  0.71493    
+## Sleep.PatternsPoor                2.855e-02  3.577e-02   0.798  0.42467    
+## History.of.Substance.AbuseYes     1.163e-02  3.316e-02   0.351  0.72587    
+## Family.History.of.DepressionYes   5.217e-02  3.557e-02   1.467  0.14242    
+## Chronic.Medical.ConditionsYes    -4.224e-03  3.276e-02  -0.129  0.89739    
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
 ## (Dispersion parameter for binomial family taken to be 1)
 ## 
-##     Null deviance: 254658  on 206883  degrees of freedom
-## Residual deviance: 249435  on 206859  degrees of freedom
-## AIC: 249485
+##     Null deviance: 25412  on 20687  degrees of freedom
+## Residual deviance: 24909  on 20663  degrees of freedom
+## AIC: 24959
 ## 
 ## Number of Fisher Scoring iterations: 4</code></pre>
 </div>
@@ -450,31 +450,31 @@ does not include 1, the effect is statistically significant.</p>
 <pre class="r"><code>exp(cbind(OR = coef(glm_model), confint(glm_model)))</code></pre>
 <pre><code>## Waiting for profiling to be done...</code></pre>
 <pre><code>##                                         OR     2.5 %    97.5 %
-## (Intercept)                      0.4951886 0.4606393 0.5322907
-## Age                              1.0004714 0.9996981 1.0012454
-## Marital.StatusMarried            1.0317309 0.9945632 1.0704238
-## Marital.StatusSingle             1.0446297 0.9974949 1.0940688
-## Marital.StatusWidowed            1.0107635 0.9674295 1.0561143
-## Education.LevelBachelor&#39;s Degree 0.8112551 0.7871450 0.8361069
-## Education.LevelHigh School       0.9537535 0.9277795 0.9804713
-## Education.LevelMaster&#39;s Degree   0.8893413 0.8572700 0.9226001
-## Education.LevelPhD               0.9699785 0.9133838 1.0299175
-## Number.of.Children               0.9981496 0.9889262 1.0074559
-## Smoking.StatusFormer             0.9578849 0.9249207 0.9920677
-## Smoking.StatusNon-smoker         0.9672491 0.9362133 0.9993736
-## Physical.Activity.LevelModerate  0.9806452 0.9531402 1.0089694
-## Physical.Activity.LevelSedentary 1.0088253 0.9786835 1.0399186
-## Employment.StatusUnemployed      1.4989422 1.4513156 1.5481232
-## Income                           0.9999960 0.9999955 0.9999964
-## Alcohol.ConsumptionLow           0.9886514 0.9635894 1.0143756
-## Alcohol.ConsumptionModerate      0.9953502 0.9711766 1.0201428
-## Dietary.HabitsModerate           0.9954748 0.9653011 1.0266201
-## Dietary.HabitsUnhealthy          0.9908827 0.9584920 1.0243961
-## Sleep.PatternsGood               0.9936536 0.9675717 1.0204095
-## Sleep.PatternsPoor               1.0330740 1.0104567 1.0561877
-## History.of.Substance.AbuseYes    1.0161910 0.9955499 1.0372403
-## Family.History.of.DepressionYes  1.0260916 1.0037517 1.0489027
-## Chronic.Medical.ConditionsYes    0.9821634 0.9625106 1.0021996</code></pre>
+## (Intercept)                      0.4356723 0.3465353 0.5472973
+## Age                              0.9995102 0.9970682 1.0019590
+## Marital.StatusMarried            1.1203664 0.9966093 1.2612663
+## Marital.StatusSingle             1.0316624 0.8908614 1.1956566
+## Marital.StatusWidowed            1.0748807 0.9353387 1.2362629
+## Education.LevelBachelor&#39;s Degree 0.8576125 0.7802198 0.9427322
+## Education.LevelHigh School       1.0468326 0.9597109 1.1420688
+## Education.LevelMaster&#39;s Degree   0.8855148 0.7874761 0.9955750
+## Education.LevelPhD               0.9385858 0.7725634 1.1380259
+## Number.of.Children               0.9860055 0.9575775 1.0152427
+## Smoking.StatusFormer             0.9720319 0.8708870 1.0854102
+## Smoking.StatusNon-smoker         0.9896266 0.8930876 1.0972590
+## Physical.Activity.LevelModerate  0.9635296 0.8810010 1.0540403
+## Physical.Activity.LevelSedentary 0.9646910 0.8769441 1.0614399
+## Employment.StatusUnemployed      1.4436018 1.3027696 1.5995603
+## Income                           0.9999961 0.9999946 0.9999975
+## Alcohol.ConsumptionLow           0.9840408 0.9070567 1.0676617
+## Alcohol.ConsumptionModerate      1.0298263 0.9530457 1.1129951
+## Dietary.HabitsModerate           1.1223528 1.0172125 1.2388163
+## Dietary.HabitsUnhealthy          1.0644801 0.9573794 1.1839690
+## Sleep.PatternsGood               1.0157528 0.9339032 1.1044797
+## Sleep.PatternsPoor               1.0289649 0.9592616 1.1036376
+## History.of.Substance.AbuseYes    1.0116950 0.9479365 1.0795310
+## Family.History.of.DepressionYes  1.0535578 0.9824914 1.1294922
+## Chronic.Medical.ConditionsYes    0.9957846 0.9337731 1.0617222</code></pre>
 </div>
 <div id="predictions-on-test-set" class="section level1">
 <h1>Predictions on test set</h1>
@@ -483,38 +483,39 @@ does not include 1, the effect is statistically significant.</p>
 glm_pred &lt;- ifelse(glm_prob &gt; 0.34, &quot;Yes&quot;, &quot;No&quot;)
 glm_pred &lt;- factor(glm_pred, levels = levels(test$History.of.Mental.Illness))
 
-saveRDS(glm_prob,  file = &quot;glm_prob.rds&quot;)</code></pre>
+saveRDS(glm_prob,  file = &quot;glm_prob.rds&quot;)
+saveRDS(glm_pred, file = &quot;glm_pred.rds&quot;)</code></pre>
 </div>
 <div id="confusion-matrix" class="section level1">
 <h1>Confusion Matrix</h1>
 <pre class="r"><code>library(caret)</code></pre>
-<pre><code>## Caricamento del pacchetto richiesto: ggplot2</code></pre>
-<pre><code>## Caricamento del pacchetto richiesto: lattice</code></pre>
+<pre><code>## Loading required package: ggplot2</code></pre>
+<pre><code>## Loading required package: lattice</code></pre>
 <pre class="r"><code>confusionMatrix(glm_pred, test$History.of.Mental.Illness, positive = &quot;Yes&quot;)</code></pre>
 <pre><code>## Confusion Matrix and Statistics
 ## 
 ##           Reference
-## Prediction   No  Yes
-##        No  9909 3372
-##        Yes 4457 2950
+## Prediction    No   Yes
+##        No  10146  3578
+##        Yes  4177  2787
 ##                                           
-##                Accuracy : 0.6216          
-##                  95% CI : (0.6149, 0.6282)
-##     No Information Rate : 0.6944          
+##                Accuracy : 0.6251          
+##                  95% CI : (0.6185, 0.6317)
+##     No Information Rate : 0.6923          
 ##     P-Value [Acc &gt; NIR] : 1               
 ##                                           
-##                   Kappa : 0.1492          
+##                   Kappa : 0.1425          
 ##                                           
-##  Mcnemar&#39;s Test P-Value : &lt;2e-16          
+##  Mcnemar&#39;s Test P-Value : 1.116e-11       
 ##                                           
-##             Sensitivity : 0.4666          
-##             Specificity : 0.6898          
-##          Pos Pred Value : 0.3983          
-##          Neg Pred Value : 0.7461          
-##              Prevalence : 0.3056          
-##          Detection Rate : 0.1426          
-##    Detection Prevalence : 0.3580          
-##       Balanced Accuracy : 0.5782          
+##             Sensitivity : 0.4379          
+##             Specificity : 0.7084          
+##          Pos Pred Value : 0.4002          
+##          Neg Pred Value : 0.7393          
+##              Prevalence : 0.3077          
+##          Detection Rate : 0.1347          
+##    Detection Prevalence : 0.3366          
+##       Balanced Accuracy : 0.5731          
 ##                                           
 ##        &#39;Positive&#39; Class : Yes             
 ## </code></pre>

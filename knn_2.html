@@ -402,28 +402,28 @@ confusionMatrix(knnpred_mental, test_dummy[[target_name_mental]], positive = &qu
 ## 
 ##           Reference
 ## Prediction     0     1
-##          0 13330  5748
-##          1   962   648
-##                                          
-##                Accuracy : 0.6757         
-##                  95% CI : (0.6692, 0.682)
-##     No Information Rate : 0.6908         
-##     P-Value [Acc &gt; NIR] : 1              
-##                                          
-##                   Kappa : 0.0429         
-##                                          
-##  Mcnemar&#39;s Test P-Value : &lt;2e-16         
-##                                          
-##             Sensitivity : 0.10131        
-##             Specificity : 0.93269        
-##          Pos Pred Value : 0.40248        
-##          Neg Pred Value : 0.69871        
-##              Prevalence : 0.30916        
-##          Detection Rate : 0.03132        
-##    Detection Prevalence : 0.07782        
-##       Balanced Accuracy : 0.51700        
-##                                          
-##        &#39;Positive&#39; Class : 1              
+##          0 13257  5762
+##          1  1066   603
+##                                           
+##                Accuracy : 0.67            
+##                  95% CI : (0.6635, 0.6764)
+##     No Information Rate : 0.6923          
+##     P-Value [Acc &gt; NIR] : 1               
+##                                           
+##                   Kappa : 0.0255          
+##                                           
+##  Mcnemar&#39;s Test P-Value : &lt;2e-16          
+##                                           
+##             Sensitivity : 0.09474         
+##             Specificity : 0.92557         
+##          Pos Pred Value : 0.36129         
+##          Neg Pred Value : 0.69704         
+##              Prevalence : 0.30767         
+##          Detection Rate : 0.02915         
+##    Detection Prevalence : 0.08067         
+##       Balanced Accuracy : 0.51016         
+##                                           
+##        &#39;Positive&#39; Class : 1               
 ## </code></pre>
 <pre class="r"><code>saveRDS(knn_prob_mental, &quot;knn_prob_mental_illness.rds&quot;)
 saveRDS(knnpred_mental, &quot;knn_pred_mental_illness.rds&quot;)</code></pre>

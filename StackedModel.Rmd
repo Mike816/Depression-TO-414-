@@ -21,12 +21,22 @@ stack_test  <- readRDS("depression_stack_test.rds")
 stack_train$actual <- as.factor(stack_train$actual)
 stack_test$actual  <- as.factor(stack_test$actual)
 
-# 2. Define the Cost Matrix
-# We weight False Negatives (4) higher to prioritize Sensitivity (finding mental illness)
-# [0, 1] -> Cost of False Positive
-# [4, 0] -> Cost of False Negative (missing a 'Yes' case)
-cost_matrix <- matrix(c(0, 1, 2, 0), nrow = 2)
-rownames(cost_matrix) <- colnames(cost_matrix) <- c("0", "1")
+# 2. Define the Financial Cost Matrix
+# The matrix format for C5.0 is: [Predicted Class, Actual Class]
+# Position [1,2] is Actual "1" Predicted "0" (False Negative)
+# Position [2,1] is Actual "0" Predicted "1" (False Positive)
+
+cost_matrix <- matrix(c(0, 800, 251, 0), nrow = 2, byrow = TRUE)
+
+# Explicitly label the rows and columns so R doesn't get confused
+rownames(cost_matrix) <- c("0", "1") # Predicted
+colnames(cost_matrix) <- c("0", "1") # Actual
+
+# Verify the matrix looks like this:
+#      Actual:0  Actual:1
+# Pred:0    0      800    <-- Cost of False Negative
+# Pred:1   251      0     <-- Cost of False Positive
+print(cost_matrix)
 
 # 3. Build the Meta-Decision Tree (C5.0)
 library(C50)

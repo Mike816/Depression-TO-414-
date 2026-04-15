@@ -374,34 +374,31 @@ if(any(nan_cols)) {
 kernels &lt;- c(&quot;rbfdot&quot;, &quot;vanilladot&quot;, &quot;polydot&quot;, &quot;tanhdot&quot;, &quot;laplacedot&quot;, &quot;anovadot&quot;, &quot;besseldot&quot;)
 
 # 3. Training and Saving Loop
+# 3. Training and Saving Loop (FORCED VERSION)
 set.seed(12345)
 for (k in kernels) {
   model_name &lt;- paste0(&quot;svm_&quot;, gsub(&quot;dot&quot;, &quot;&quot;, k))
   file_path &lt;- paste0(model_name, &quot;.rds&quot;)
   
-  if (!file.exists(file_path)) {
-    cat(&quot;Training:&quot;, k, &quot;\n&quot;)
-    # prob.model = TRUE is critical for generating probabilities for stacking
-    m &lt;- ksvm(as.factor(history_of_mental_illness_yes) ~ ., 
-              data = train_dummy, 
-              kernel = k, 
-              prob.model = TRUE) 
-    saveRDS(m, file_path)
-  } else {
-    cat(&quot;Skipping:&quot;, k, &quot;(file already exists)\n&quot;)
-  }
+  # Removed the &#39;if file.exists&#39; check to force a refresh
+  cat(&quot;Training (FORCED):&quot;, k, &quot;\n&quot;)
+  m &lt;- ksvm(as.factor(history_of_mental_illness_yes) ~ ., 
+            data = train_dummy, 
+            kernel = k, 
+            prob.model = TRUE) 
+  saveRDS(m, file_path)
 }</code></pre>
-<pre><code>## Training: rbfdot 
-## Training: vanilladot 
+<pre><code>## Training (FORCED): rbfdot 
+## Training (FORCED): vanilladot 
 ##  Setting default kernel parameters  
-## maximum number of iterations reached 0.0007345829 0.000723697Training: polydot 
+## maximum number of iterations reached 0.0007084213 0.0006945407Training (FORCED): polydot 
 ##  Setting default kernel parameters  
-## maximum number of iterations reached 2.68223e-05 2.679505e-05Training: tanhdot 
+## maximum number of iterations reached -0.0001927762 -0.0001939944Training (FORCED): tanhdot 
 ##  Setting default kernel parameters  
-## line search fails -0.0001802594 0.8116363 -0.005835684 -0.0001361069 7.831359e-11 3.963656e-08 -5.851822e-12Training: laplacedot 
-## Training: anovadot 
+## Training (FORCED): laplacedot 
+## Training (FORCED): anovadot 
 ##  Setting default kernel parameters  
-## Training: besseldot 
+## Training (FORCED): besseldot 
 ##  Setting default kernel parameters</code></pre>
 <pre class="r"><code># 4. Loading and Evaluation (Categorical)
 evaluation_results &lt;- lapply(kernels, function(k) {
@@ -427,14 +424,14 @@ evaluation_results &lt;- lapply(kernels, function(k) {
 # 5. Display Summary Table
 tuning_summary &lt;- do.call(rbind, evaluation_results)
 print(tuning_summary)</code></pre>
-<pre><code>##               kernel  accuracy        kappa sensitivity
-## Accuracy      rbfdot 0.6908353  0.000000000   0.0000000
-## Accuracy1 vanilladot 0.6908353  0.000000000   0.0000000
-## Accuracy2    polydot 0.6908353  0.000000000   0.0000000
-## Accuracy3    tanhdot 0.5905356  0.029997666   0.3164478
-## Accuracy4 laplacedot 0.6908353  0.000000000   0.0000000
-## Accuracy5   anovadot 0.6908353  0.000000000   0.0000000
-## Accuracy6  besseldot 0.5760828 -0.001744898   0.2975297</code></pre>
+<pre><code>##               kernel  accuracy       kappa sensitivity
+## Accuracy      rbfdot 0.6923337  0.00000000   0.0000000
+## Accuracy1 vanilladot 0.6923337  0.00000000   0.0000000
+## Accuracy2    polydot 0.6923337  0.00000000   0.0000000
+## Accuracy3    tanhdot 0.5868619  0.03052380   0.3291438
+## Accuracy4 laplacedot 0.6923337  0.00000000   0.0000000
+## Accuracy5   anovadot 0.6923337  0.00000000   0.0000000
+## Accuracy6  besseldot 0.5517208 -0.05152603   0.2727416</code></pre>
 <pre class="r"><code># 6. Generate Probabilities with Detailed Diagnostics
 p_svm_list &lt;- lapply(kernels, function(k) {
   model_name &lt;- paste0(&quot;svm_&quot;, gsub(&quot;dot&quot;, &quot;&quot;, k))
@@ -461,13 +458,8 @@ p_svm_list &lt;- lapply(kernels, function(k) {
     return(NULL)
   })
   return(prob_vector)
-})</code></pre>
-<pre><code>## 
-## [FAILURE REPORT] Kernel: tanhdot 
-##   - Reason: Platt Scaling failure. The algorithm could not fit a valid sigmoid curve
-##     to turn decision distances into probabilities. This is often caused by sparse data.
-##   - Technical Message: $ operator is invalid for atomic vectors</code></pre>
-<pre class="r"><code>names(p_svm_list) &lt;- kernels
+})
+names(p_svm_list) &lt;- kernels
 
 # 7. Final Selection for Stacked Model
 # Ensure we pick a kernel that actually has a working probability model
@@ -482,6 +474,60 @@ if(nrow(valid_summary) &gt; 0) {
   p_best &lt;- p_svm_list[[best_kernel_name]]
   saveRDS(p_best, &quot;best_svm_prob_mental_illness.rds&quot;)
 }</code></pre>
+<pre class="r"><code>library(kernlab)
+library(caret)
+
+# 1. Load the RBF model and your test data
+# Ensure test_dummy is the same version used in your SVM script
+m_rbf &lt;- readRDS(&quot;svm_rbf.rds&quot;)
+test_dummy &lt;- readRDS(&quot;test_dummy.rds&quot;)
+
+# 1. Get RAW PROBABILITIES instead of class labels
+# type = &quot;probabilities&quot; returns a matrix with columns &quot;0&quot; and &quot;1&quot;
+prob_rbf &lt;- predict(m_rbf, test_dummy, type = &quot;probabilities&quot;)
+
+# 2. Extract the probability for the &quot;Yes&quot; class (column &quot;1&quot;)
+p_yes &lt;- prob_rbf[, &quot;1&quot;]
+
+# 3. SET YOUR NEW THRESHOLD (e.g., 0.3)
+# If the probability is &gt; 0.3, we call it a &quot;1&quot;
+new_threshold &lt;- 0.30
+pred_low_thresh &lt;- ifelse(p_yes &gt; new_threshold, &quot;1&quot;, &quot;0&quot;)
+
+# 4. Convert back to factors for the Confusion Matrix
+pred_low_thresh &lt;- factor(pred_low_thresh, levels = c(&quot;0&quot;, &quot;1&quot;))
+actual_values &lt;- factor(test_dummy$history_of_mental_illness_yes, levels = c(&quot;0&quot;, &quot;1&quot;))
+
+# 5. Run the new Confusion Matrix
+cm_low_svm &lt;- confusionMatrix(pred_low_thresh, actual_values, positive = &quot;1&quot;)
+print(cm_low_svm)</code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    0    1
+##          0 6295 2485
+##          1 8028 3880
+##                                          
+##                Accuracy : 0.4918         
+##                  95% CI : (0.485, 0.4987)
+##     No Information Rate : 0.6923         
+##     P-Value [Acc &gt; NIR] : 1              
+##                                          
+##                   Kappa : 0.0395         
+##                                          
+##  Mcnemar&#39;s Test P-Value : &lt;2e-16         
+##                                          
+##             Sensitivity : 0.6096         
+##             Specificity : 0.4395         
+##          Pos Pred Value : 0.3258         
+##          Neg Pred Value : 0.7170         
+##              Prevalence : 0.3077         
+##          Detection Rate : 0.1875         
+##    Detection Prevalence : 0.5756         
+##       Balanced Accuracy : 0.5245         
+##                                          
+##        &#39;Positive&#39; Class : 1              
+## </code></pre>
 <div id="summary" class="section level1">
 <h1>summary</h1>
 <p>After testing all the models, splinedot was the best, both in terms
