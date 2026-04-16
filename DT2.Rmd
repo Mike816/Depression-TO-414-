@@ -9,9 +9,11 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
 ```{r, cache= TRUE}
 library(C50)
 library(caret)
+set.seed(12345)
 
 # Using the original data as requested
 train <- readRDS("train_original.rds")
@@ -53,4 +55,65 @@ saveRDS(c50_model, file = "c50_model.rds")
 saveRDS(c50_pred, file = "c50_pred.rds")
 # Saving the 'Yes' probability vector specifically for consistency with your other models
 saveRDS(c50_prob[, "Yes"], file = "c50_prob_mental_illness.rds")
+```
+
+```{r, cache= TRUE}
+library(randomForest)
+library(caret)
+
+# 1. LOAD DATA
+# Using the original data as requested for tree-based models
+train <- readRDS("train_original.rds")
+test  <- readRDS("test_original.rds")
+
+# 2. PRE-PROCESSING
+# Ensure target variable is a factor for classification
+train$History.of.Mental.Illness <- as.factor(train$History.of.Mental.Illness)
+test$History.of.Mental.Illness  <- as.factor(test$History.of.Mental.Illness)
+
+# Define the features (X) and the target (y)
+features <- train[, names(train) != "History.of.Mental.Illness"]
+target   <- train$History.of.Mental.Illness
+
+# 3. TRAIN RANDOM FOREST
+# ntree: number of trees (500 is standard)
+# importance: TRUE allows us to see which variables matter most
+set.seed(123) # For reproducibility
+rf_model <- randomForest(features, target, ntree = 500, importance = TRUE)
+
+# View model summary and variable importance
+print(rf_model)
+importance(rf_model)
+varImpPlot(rf_model)
+
+# 4. PREDICTIONS
+# Ensure test features match training features
+test_features <- test[, names(test) != "History.of.Mental.Illness"]
+
+# Predict Class (Default 0.5 threshold)
+rf_pred <- predict(rf_model, test_features, type = "class")
+
+# Predict Probabilities
+rf_prob <- predict(rf_model, test_features, type = "prob")
+
+# 5. EVALUATION
+# Using the 0.5 threshold first
+cat("\n--- RANDOM FOREST (Default 0.5 Threshold) ---\n")
+confusionMatrix(rf_pred, test$History.of.Mental.Illness, positive = "Yes")
+
+# 6. OPTIONAL: APPLY CUSTOM THRESHOLD (0.34)
+# Since you mentioned the 0.5 threshold predicts "All No", this 0.34 shift 
+# will make the model more sensitive.
+rf_pred_34 <- factor(ifelse(rf_prob[, "Yes"] > 0.34, "Yes", "No"), levels = c("No", "Yes"))
+
+cat("\n--- RANDOM FOREST (Adjusted 0.34 Threshold) ---\n")
+confusionMatrix(rf_pred_34, test$History.of.Mental.Illness, positive = "Yes")
+
+# 7. SAVE OUTPUTS
+saveRDS(rf_model, file = "rf_model.rds")
+saveRDS(rf_pred_34, file = "rf_pred.rds") # Saving the sensitive version for the council
+saveRDS(rf_prob[, "Yes"], file = "rf_prob_mental_illness.rds")
+
+# Preview results
+head(rf_prob)
 ```

@@ -358,19 +358,12 @@ display: none;
 
 
 <pre class="r"><code># --- Level 1 Meta-Model Evaluation ---
-library(caret)</code></pre>
-<pre><code>## Loading required package: ggplot2</code></pre>
-<pre><code>## Loading required package: lattice</code></pre>
-<pre class="r"><code>library(C50)
-library(randomForest)</code></pre>
-<pre><code>## randomForest 4.7-1.2</code></pre>
-<pre><code>## Type rfNews() to see new features/changes/bug fixes.</code></pre>
-<pre><code>## 
-## Attaching package: &#39;randomForest&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:ggplot2&#39;:
-## 
-##     margin</code></pre>
-<pre class="r"><code># 1. Load the 30% Stacked Test Partition
+library(caret)
+library(C50)
+library(randomForest)
+set.seed(12345)
+
+# 1. Load the 30% Stacked Test Partition
 # This is the &#39;holdout&#39; data containing expert probabilities the meta-model hasn&#39;t seen
 stack_test &lt;- readRDS(&quot;depression_stack_test.rds&quot;)
 
@@ -397,23 +390,23 @@ cat(&quot;--- LEVEL 1: C5.0 META-TREE (Depression) ---\n&quot;)</code></pre>
 <pre class="r"><code>print(cm_tree$table)</code></pre>
 <pre><code>##           Reference
 ## Prediction    0    1
-##          0 2877 1049
-##          1 1393  888</code></pre>
+##          0 1507  431
+##          1 2763 1506</code></pre>
 <pre class="r"><code>cat(&quot;Kappa:&quot;, round(cm_tree$overall[&quot;Kappa&quot;], 4), &quot;\n&quot;)</code></pre>
-<pre><code>## Kappa: 0.1261</code></pre>
+<pre><code>## Kappa: 0.0981</code></pre>
 <pre class="r"><code>cat(&quot;Sensitivity (Mental Illness):&quot;, round(cm_tree$byClass[&quot;Sensitivity&quot;], 4), &quot;\n\n&quot;)</code></pre>
-<pre><code>## Sensitivity (Mental Illness): 0.4584</code></pre>
+<pre><code>## Sensitivity (Mental Illness): 0.7775</code></pre>
 <pre class="r"><code>cat(&quot;--- LEVEL 1: RANDOM FOREST META-MODEL (Depression) ---\n&quot;)</code></pre>
 <pre><code>## --- LEVEL 1: RANDOM FOREST META-MODEL (Depression) ---</code></pre>
 <pre class="r"><code>print(cm_rf$table)</code></pre>
 <pre><code>##           Reference
 ## Prediction    0    1
-##          0 3918 1742
-##          1  352  195</code></pre>
+##          0 3948 1728
+##          1  322  209</code></pre>
 <pre class="r"><code>cat(&quot;Kappa:&quot;, round(cm_rf$overall[&quot;Kappa&quot;], 4), &quot;\n&quot;)</code></pre>
-<pre><code>## Kappa: 0.0227</code></pre>
+<pre><code>## Kappa: 0.0405</code></pre>
 <pre class="r"><code>cat(&quot;Sensitivity (Mental Illness):&quot;, round(cm_rf$byClass[&quot;Sensitivity&quot;], 4), &quot;\n&quot;)</code></pre>
-<pre><code>## Sensitivity (Mental Illness): 0.1007</code></pre>
+<pre><code>## Sensitivity (Mental Illness): 0.1079</code></pre>
 <pre class="r"><code># 5. Save Final Metrics Table
 # This will be the centerpiece of your final report with Mike
 stacked_metrics &lt;- data.frame(
@@ -427,8 +420,460 @@ stacked_metrics &lt;- data.frame(
 saveRDS(stacked_metrics, &quot;depression_stacked_metrics.rds&quot;)
 print(stacked_metrics)</code></pre>
 <pre><code>##          Model  Accuracy      Kappa      Sens      Spec
-## 1 STACKED_Tree 0.6065732 0.12609380 0.4584409 0.6737705
-## 2   STACKED_RF 0.6626390 0.02268212 0.1006711 0.9175644</code></pre>
+## 1 STACKED_Tree 0.4854197 0.09814054 0.7774910 0.3529274
+## 2   STACKED_RF 0.6697277 0.04052487 0.1078988 0.9245902</code></pre>
+<pre class="r"><code>library(caret)</code></pre>
+<pre><code>## Loading required package: ggplot2</code></pre>
+<pre><code>## Loading required package: lattice</code></pre>
+<pre class="r"><code>library(kernlab) # For SVM</code></pre>
+<pre><code>## 
+## Attaching package: &#39;kernlab&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:ggplot2&#39;:
+## 
+##     alpha</code></pre>
+<pre class="r"><code>library(C50)     # For Tree
+library(nnet)    # For ANN
+library(class)   # For KNN
+library(randomForest)</code></pre>
+<pre><code>## randomForest 4.7-1.2</code></pre>
+<pre><code>## Type rfNews() to see new features/changes/bug fixes.</code></pre>
+<pre><code>## 
+## Attaching package: &#39;randomForest&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:ggplot2&#39;:
+## 
+##     margin</code></pre>
+<pre class="r"><code># 1. LOAD THE MODELS
+m_glm  &lt;- readRDS(&quot;glm_model.rds&quot;)
+m_knn  &lt;- readRDS(&quot;knn_model_object.rds&quot;)
+m_ann  &lt;- readRDS(&quot;ann.rds&quot;)
+m_svm  &lt;- readRDS(&quot;svm_rbf.rds&quot;)
+m_tree &lt;- readRDS(&quot;c50_model.rds&quot;)
+
+# 2. LOAD THE TEST DATA
+# &#39;test_raw&#39; (Factors/Raw Scales) for GLM and Tree
+# &#39;test_dummy&#39; (Normalized/Dummified) for KNN, ANN, and SVM
+test_raw   &lt;- readRDS(&quot;test_original.rds&quot;)
+test_dummy &lt;- readRDS(&quot;test_dummy.rds&quot;)
+
+# Ensure target variables are factors
+# Check your specific column names if these throw errors!
+actual_raw   &lt;- as.factor(test_raw$History.of.Mental.Illness)
+actual_dummy &lt;- as.factor(test_dummy$history_of_mental_illness_yes)
+
+# ---------------------------------------------------------
+# 1. LOGISTIC REGRESSION (Using Raw Data)
+# ---------------------------------------------------------
+# Predict probability, then convert to Yes/No based on 0.5 threshold
+prob_glm &lt;- predict(m_glm, test_raw, type = &quot;response&quot;)
+pred_glm &lt;- factor(ifelse(prob_glm &gt; 0.34, &quot;Yes&quot;, &quot;No&quot;), levels = c(&quot;No&quot;, &quot;Yes&quot;))
+
+cat(&quot;\n--- LOGISTIC REGRESSION ---\n&quot;)</code></pre>
+<pre><code>## 
+## --- LOGISTIC REGRESSION ---</code></pre>
+<pre class="r"><code>print(confusionMatrix(pred_glm, actual_raw, positive = &quot;Yes&quot;))</code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    No   Yes
+##        No  10146  3578
+##        Yes  4177  2787
+##                                           
+##                Accuracy : 0.6251          
+##                  95% CI : (0.6185, 0.6317)
+##     No Information Rate : 0.6923          
+##     P-Value [Acc &gt; NIR] : 1               
+##                                           
+##                   Kappa : 0.1425          
+##                                           
+##  Mcnemar&#39;s Test P-Value : 1.116e-11       
+##                                           
+##             Sensitivity : 0.4379          
+##             Specificity : 0.7084          
+##          Pos Pred Value : 0.4002          
+##          Neg Pred Value : 0.7393          
+##              Prevalence : 0.3077          
+##          Detection Rate : 0.1347          
+##    Detection Prevalence : 0.3366          
+##       Balanced Accuracy : 0.5731          
+##                                           
+##        &#39;Positive&#39; Class : Yes             
+## </code></pre>
+<pre class="r"><code># ---------------------------------------------------------
+# 2. K-NEAREST NEIGHBORS (Fixing the Dimension Error)
+# ---------------------------------------------------------
+m_knn &lt;- readRDS(&quot;knn_model_object.rds&quot;)
+
+# We create a temporary version of the data without the target column
+# Replace &#39;history_of_mental_illness_yes&#39; with whatever your target column name is
+test_features_only &lt;- test_dummy[, !names(test_dummy) %in% c(&quot;history_of_mental_illness_yes&quot;)]
+
+# Now predict using the features only
+pred_knn &lt;- predict(m_knn, test_features_only, type = &quot;class&quot;)
+
+cat(&quot;\n--- K-NEAREST NEIGHBORS ---\n&quot;)</code></pre>
+<pre><code>## 
+## --- K-NEAREST NEIGHBORS ---</code></pre>
+<pre class="r"><code>print(confusionMatrix(pred_knn, actual_dummy, positive = &quot;1&quot;))</code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction     0     1
+##          0 13262  5761
+##          1  1061   604
+##                                           
+##                Accuracy : 0.6702          
+##                  95% CI : (0.6638, 0.6766)
+##     No Information Rate : 0.6923          
+##     P-Value [Acc &gt; NIR] : 1               
+##                                           
+##                   Kappa : 0.0262          
+##                                           
+##  Mcnemar&#39;s Test P-Value : &lt;2e-16          
+##                                           
+##             Sensitivity : 0.09489         
+##             Specificity : 0.92592         
+##          Pos Pred Value : 0.36276         
+##          Neg Pred Value : 0.69716         
+##              Prevalence : 0.30767         
+##          Detection Rate : 0.02920         
+##    Detection Prevalence : 0.08048         
+##       Balanced Accuracy : 0.51041         
+##                                           
+##        &#39;Positive&#39; Class : 1               
+## </code></pre>
+<pre class="r"><code># ---------------------------------------------------------
+# 3. ARTIFICIAL NEURAL NETWORK (Using Normalized Data)
+# ---------------------------------------------------------
+# nnet returns a single numeric column; convert to 0/1 at 0.5
+prob_ann &lt;- predict(m_ann, test_dummy, type = &quot;raw&quot;)
+pred_ann &lt;- factor(ifelse(prob_ann &gt; 0.34, &quot;1&quot;, &quot;0&quot;), levels = c(&quot;0&quot;, &quot;1&quot;))
+
+cat(&quot;\n--- NEURAL NETWORK ---\n&quot;)</code></pre>
+<pre><code>## 
+## --- NEURAL NETWORK ---</code></pre>
+<pre class="r"><code>print(confusionMatrix(pred_ann, actual_dummy, positive = &quot;1&quot;))</code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction     0     1
+##          0 11733  4806
+##          1  2590  1559
+##                                          
+##                Accuracy : 0.6425         
+##                  95% CI : (0.6359, 0.649)
+##     No Information Rate : 0.6923         
+##     P-Value [Acc &gt; NIR] : 1              
+##                                          
+##                   Kappa : 0.071          
+##                                          
+##  Mcnemar&#39;s Test P-Value : &lt;2e-16         
+##                                          
+##             Sensitivity : 0.24493        
+##             Specificity : 0.81917        
+##          Pos Pred Value : 0.37575        
+##          Neg Pred Value : 0.70941        
+##              Prevalence : 0.30767        
+##          Detection Rate : 0.07536        
+##    Detection Prevalence : 0.20055        
+##       Balanced Accuracy : 0.53205        
+##                                          
+##        &#39;Positive&#39; Class : 1              
+## </code></pre>
+<pre class="r"><code># ---------------------------------------------------------
+# 4. SUPPORT VECTOR MACHINE (Custom Threshold: 0.3)
+# ---------------------------------------------------------
+# 1. Get raw probabilities instead of class labels
+# This returns a matrix with columns for &quot;0&quot; and &quot;1&quot;
+prob_svm &lt;- predict(m_svm, test_dummy, type = &quot;probabilities&quot;)
+
+# 2. Extract the probability for the positive class (&quot;1&quot;)
+prob_pos_svm &lt;- prob_svm[, &quot;1&quot;]
+
+# 3. Apply your custom threshold of 0.34
+pred_svm_34 &lt;- factor(ifelse(prob_pos_svm &gt; 0.3, &quot;1&quot;, &quot;0&quot;), levels = c(&quot;0&quot;, &quot;1&quot;))
+
+cat(&quot;\n--- SUPPORT VECTOR MACHINE (Threshold: 0.3) ---\n&quot;)</code></pre>
+<pre><code>## 
+## --- SUPPORT VECTOR MACHINE (Threshold: 0.3) ---</code></pre>
+<pre class="r"><code>print(confusionMatrix(pred_svm_34, actual_dummy, positive = &quot;1&quot;))</code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    0    1
+##          0 6295 2485
+##          1 8028 3880
+##                                          
+##                Accuracy : 0.4918         
+##                  95% CI : (0.485, 0.4987)
+##     No Information Rate : 0.6923         
+##     P-Value [Acc &gt; NIR] : 1              
+##                                          
+##                   Kappa : 0.0395         
+##                                          
+##  Mcnemar&#39;s Test P-Value : &lt;2e-16         
+##                                          
+##             Sensitivity : 0.6096         
+##             Specificity : 0.4395         
+##          Pos Pred Value : 0.3258         
+##          Neg Pred Value : 0.7170         
+##              Prevalence : 0.3077         
+##          Detection Rate : 0.1875         
+##    Detection Prevalence : 0.5756         
+##       Balanced Accuracy : 0.5245         
+##                                          
+##        &#39;Positive&#39; Class : 1              
+## </code></pre>
+<pre class="r"><code># ---------------------------------------------------------
+# 5. C5.0 DECISION TREE (Custom Threshold: 0.34)
+# ---------------------------------------------------------
+# 1. Get probabilities instead of the final class
+# We use &#39;test_raw&#39; because C5.0 was trained on factors/raw scales
+prob_tree &lt;- predict(m_tree, test_raw, type = &quot;prob&quot;)
+
+# 2. Extract the &quot;Yes&quot; probability column
+# If your model levels are 1/0, change &quot;Yes&quot; to &quot;1&quot;
+prob_yes_tree &lt;- prob_tree[, &quot;Yes&quot;]
+
+# 3. Apply the 0.34 threshold
+# If the probability is &gt; 0.34, label it &quot;Yes&quot;, otherwise &quot;No&quot;
+pred_tree_34 &lt;- factor(ifelse(prob_yes_tree &gt; 0.5, &quot;Yes&quot;, &quot;No&quot;), levels = c(&quot;No&quot;, &quot;Yes&quot;))
+
+cat(&quot;\n--- C5.0 DECISION TREE (Threshold: 0.34) ---\n&quot;)</code></pre>
+<pre><code>## 
+## --- C5.0 DECISION TREE (Threshold: 0.34) ---</code></pre>
+<pre class="r"><code># 4. Generate the Confusion Matrix
+print(confusionMatrix(pred_tree_34, actual_raw, positive = &quot;Yes&quot;))</code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    No   Yes
+##        No  14323  6365
+##        Yes     0     0
+##                                          
+##                Accuracy : 0.6923         
+##                  95% CI : (0.686, 0.6986)
+##     No Information Rate : 0.6923         
+##     P-Value [Acc &gt; NIR] : 0.5034         
+##                                          
+##                   Kappa : 0              
+##                                          
+##  Mcnemar&#39;s Test P-Value : &lt;2e-16         
+##                                          
+##             Sensitivity : 0.0000         
+##             Specificity : 1.0000         
+##          Pos Pred Value :    NaN         
+##          Neg Pred Value : 0.6923         
+##              Prevalence : 0.3077         
+##          Detection Rate : 0.0000         
+##    Detection Prevalence : 0.0000         
+##       Balanced Accuracy : 0.5000         
+##                                          
+##        &#39;Positive&#39; Class : Yes            
+## </code></pre>
+<pre class="r"><code># ---------------------------------------------------------
+# 6. RANDOM FOREST EXPERT (Using Raw Data)
+# ---------------------------------------------------------
+m_rf_expert &lt;- readRDS(&quot;rf_model.rds&quot;)
+
+# Generate probabilities
+prob_rf_expert &lt;- predict(m_rf_expert, test_raw, type = &quot;prob&quot;)
+
+# Apply standard 0.5 threshold or your preferred custom threshold
+pred_rf_expert &lt;- factor(ifelse(prob_rf_expert[, &quot;Yes&quot;] &gt; 0.34, &quot;Yes&quot;, &quot;No&quot;), 
+                         levels = c(&quot;No&quot;, &quot;Yes&quot;))
+
+cat(&quot;\n--- RANDOM FOREST EXPERT ---\n&quot;)</code></pre>
+<pre><code>## 
+## --- RANDOM FOREST EXPERT ---</code></pre>
+<pre class="r"><code>cm_rf_expert &lt;- confusionMatrix(pred_rf_expert, actual_raw, positive = &quot;Yes&quot;)
+print(cm_rf_expert)</code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    No   Yes
+##        No  10644  4137
+##        Yes  3679  2228
+##                                           
+##                Accuracy : 0.6222          
+##                  95% CI : (0.6155, 0.6288)
+##     No Information Rate : 0.6923          
+##     P-Value [Acc &gt; NIR] : 1               
+##                                           
+##                   Kappa : 0.0951          
+##                                           
+##  Mcnemar&#39;s Test P-Value : 2.351e-07       
+##                                           
+##             Sensitivity : 0.3500          
+##             Specificity : 0.7431          
+##          Pos Pred Value : 0.3772          
+##          Neg Pred Value : 0.7201          
+##              Prevalence : 0.3077          
+##          Detection Rate : 0.1077          
+##    Detection Prevalence : 0.2855          
+##       Balanced Accuracy : 0.5466          
+##                                           
+##        &#39;Positive&#39; Class : Yes             
+## </code></pre>
+<pre class="r"><code># ---------------------------------------------------------
+# MASTER PERFORMANCE SUMMARY TABLE (Sorted by Sensitivity)
+# ---------------------------------------------------------
+library(knitr)
+library(dplyr)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;dplyr&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:randomForest&#39;:
+## 
+##     combine</code></pre>
+<pre><code>## The following objects are masked from &#39;package:stats&#39;:
+## 
+##     filter, lag</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     intersect, setdiff, setequal, union</code></pre>
+<pre class="r"><code>library(randomForest) 
+
+# 1. Helper function to extract metrics with a &#39;Type&#39; tag
+extract_metrics &lt;- function(cm, model_name, type) {
+  data.frame(
+    Category = type,
+    Model = model_name,
+    Accuracy = round(as.numeric(cm$overall[&quot;Accuracy&quot;]), 4),
+    Kappa = round(as.numeric(cm$overall[&quot;Kappa&quot;]), 4),
+    Sensitivity = round(as.numeric(cm$byClass[&quot;Sensitivity&quot;]), 4),
+    Specificity = round(as.numeric(cm$byClass[&quot;Specificity&quot;]), 4),
+    stringsAsFactors = FALSE
+  )
+}
+
+# 2. Combine all models into one data frame
+# Note: Ensure these CM objects are named correctly based on your previous chunks
+performance_report &lt;- rbind(
+  # Stacked Level 1 Models
+  extract_metrics(cm_tree, &quot;Meta-Tree (C5.0)&quot;, &quot;Stacked&quot;),
+  extract_metrics(cm_rf, &quot;Meta-Random Forest&quot;, &quot;Stacked&quot;),
+  
+  # Individual Expert Models
+  extract_metrics(cm_rf_expert, &quot;Random Forest&quot;, &quot;Individual&quot;),
+  extract_metrics(confusionMatrix(pred_glm, actual_raw, positive = &quot;Yes&quot;), &quot;Logistic Regression&quot;, &quot;Individual&quot;),
+  extract_metrics(confusionMatrix(pred_knn, actual_dummy, positive = &quot;1&quot;), &quot;KNN&quot;, &quot;Individual&quot;),
+  extract_metrics(confusionMatrix(pred_ann, actual_dummy, positive = &quot;1&quot;), &quot;Neural Network&quot;, &quot;Individual&quot;),
+  extract_metrics(confusionMatrix(pred_svm_34, actual_dummy, positive = &quot;1&quot;), &quot;SVM&quot;, &quot;Individual&quot;),
+  extract_metrics(confusionMatrix(pred_tree_34, actual_raw, positive = &quot;Yes&quot;), &quot;C5.0 Tree&quot;, &quot;Individual&quot;)
+)
+
+# 3. THE SORT: Order by Sensitivity in descending order (highest to lowest)
+performance_report &lt;- performance_report[order(performance_report$Sensitivity, decreasing = TRUE), ]
+
+# 4. Final Formatting: Multiply by 100 for percentage-style reading
+performance_report_clean &lt;- performance_report %&gt;%
+  mutate(across(c(Accuracy, Kappa, Sensitivity, Specificity), ~ .x * 100)) %&gt;%
+  rename(`Sensitivity (Catch Rate %)` = Sensitivity,
+         `Accuracy (%)` = Accuracy)
+
+# 5. Display the Table
+kable(performance_report_clean, 
+      caption = &quot;414-Insurance: Model Leaderboard (Ordered by Sensitivity)&quot;,
+      align = &quot;llcccc&quot;)</code></pre>
+<table style="width:100%;">
+<caption>414-Insurance: Model Leaderboard (Ordered by
+Sensitivity)</caption>
+<colgroup>
+<col width="3%" />
+<col width="11%" />
+<col width="20%" />
+<col width="14%" />
+<col width="7%" />
+<col width="29%" />
+<col width="13%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="left">Category</th>
+<th align="left">Model</th>
+<th align="center">Accuracy (%)</th>
+<th align="center">Kappa</th>
+<th align="center">Sensitivity (Catch Rate %)</th>
+<th align="center">Specificity</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">1</td>
+<td align="left">Stacked</td>
+<td align="left">Meta-Tree (C5.0)</td>
+<td align="center">48.54</td>
+<td align="center">9.81</td>
+<td align="center">77.75</td>
+<td align="center">35.29</td>
+</tr>
+<tr class="even">
+<td align="left">7</td>
+<td align="left">Individual</td>
+<td align="left">SVM</td>
+<td align="center">49.18</td>
+<td align="center">3.95</td>
+<td align="center">60.96</td>
+<td align="center">43.95</td>
+</tr>
+<tr class="odd">
+<td align="left">4</td>
+<td align="left">Individual</td>
+<td align="left">Logistic Regression</td>
+<td align="center">62.51</td>
+<td align="center">14.25</td>
+<td align="center">43.79</td>
+<td align="center">70.84</td>
+</tr>
+<tr class="even">
+<td align="left">3</td>
+<td align="left">Individual</td>
+<td align="left">Random Forest</td>
+<td align="center">62.22</td>
+<td align="center">9.51</td>
+<td align="center">35.00</td>
+<td align="center">74.31</td>
+</tr>
+<tr class="odd">
+<td align="left">6</td>
+<td align="left">Individual</td>
+<td align="left">Neural Network</td>
+<td align="center">64.25</td>
+<td align="center">7.10</td>
+<td align="center">24.49</td>
+<td align="center">81.92</td>
+</tr>
+<tr class="even">
+<td align="left">2</td>
+<td align="left">Stacked</td>
+<td align="left">Meta-Random Forest</td>
+<td align="center">66.97</td>
+<td align="center">4.05</td>
+<td align="center">10.79</td>
+<td align="center">92.46</td>
+</tr>
+<tr class="odd">
+<td align="left">5</td>
+<td align="left">Individual</td>
+<td align="left">KNN</td>
+<td align="center">67.02</td>
+<td align="center">2.62</td>
+<td align="center">9.49</td>
+<td align="center">92.59</td>
+</tr>
+<tr class="even">
+<td align="left">8</td>
+<td align="left">Individual</td>
+<td align="left">C5.0 Tree</td>
+<td align="center">69.23</td>
+<td align="center">0.00</td>
+<td align="center">0.00</td>
+<td align="center">100.00</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code># Save final results for your report
+saveRDS(performance_report_clean, &quot;final_model_comparison_table.rds&quot;)</code></pre>
 
 
 

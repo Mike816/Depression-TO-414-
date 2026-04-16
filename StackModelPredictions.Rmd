@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(caret)
 library(C50)
 library(randomForest)
+set.seed(12345)
 
 # 1. Load the 30% Stacked Test Partition
 # This is the 'holdout' data containing expert probabilities the meta-model hasn't seen
@@ -67,6 +68,7 @@ library(kernlab) # For SVM
 library(C50)     # For Tree
 library(nnet)    # For ANN
 library(class)   # For KNN
+library(randomForest)
 
 # 1. LOAD THE MODELS
 m_glm  <- readRDS("glm_model.rds")
@@ -91,7 +93,7 @@ actual_dummy <- as.factor(test_dummy$history_of_mental_illness_yes)
 # ---------------------------------------------------------
 # Predict probability, then convert to Yes/No based on 0.5 threshold
 prob_glm <- predict(m_glm, test_raw, type = "response")
-pred_glm <- factor(ifelse(prob_glm > 0.5, "Yes", "No"), levels = c("No", "Yes"))
+pred_glm <- factor(ifelse(prob_glm > 0.34, "Yes", "No"), levels = c("No", "Yes"))
 
 cat("\n--- LOGISTIC REGRESSION ---\n")
 print(confusionMatrix(pred_glm, actual_raw, positive = "Yes"))
@@ -116,27 +118,113 @@ print(confusionMatrix(pred_knn, actual_dummy, positive = "1"))
 # ---------------------------------------------------------
 # nnet returns a single numeric column; convert to 0/1 at 0.5
 prob_ann <- predict(m_ann, test_dummy, type = "raw")
-pred_ann <- factor(ifelse(prob_ann > 0.5, "1", "0"), levels = c("0", "1"))
+pred_ann <- factor(ifelse(prob_ann > 0.34, "1", "0"), levels = c("0", "1"))
 
 cat("\n--- NEURAL NETWORK ---\n")
 print(confusionMatrix(pred_ann, actual_dummy, positive = "1"))
 
 # ---------------------------------------------------------
-# 4. SUPPORT VECTOR MACHINE (Using Normalized Data)
+# 4. SUPPORT VECTOR MACHINE (Custom Threshold: 0.3)
 # ---------------------------------------------------------
-# ksvm objects return class labels by default
-pred_svm <- predict(m_svm, test_dummy)
+# 1. Get raw probabilities instead of class labels
+# This returns a matrix with columns for "0" and "1"
+prob_svm <- predict(m_svm, test_dummy, type = "probabilities")
 
-cat("\n--- SUPPORT VECTOR MACHINE ---\n")
-print(confusionMatrix(pred_svm, actual_dummy, positive = "1"))
+# 2. Extract the probability for the positive class ("1")
+prob_pos_svm <- prob_svm[, "1"]
+
+# 3. Apply your custom threshold of 0.34
+pred_svm_34 <- factor(ifelse(prob_pos_svm > 0.3, "1", "0"), levels = c("0", "1"))
+
+cat("\n--- SUPPORT VECTOR MACHINE (Threshold: 0.3) ---\n")
+print(confusionMatrix(pred_svm_34, actual_dummy, positive = "1"))
 
 # ---------------------------------------------------------
-# 5. C5.0 DECISION TREE (Using Raw Data)
+# 5. C5.0 DECISION TREE (Custom Threshold: 0.34)
 # ---------------------------------------------------------
-# Decision trees handle factors natively
-pred_tree <- predict(m_tree, test_raw, type = "class")
+# 1. Get probabilities instead of the final class
+# We use 'test_raw' because C5.0 was trained on factors/raw scales
+prob_tree <- predict(m_tree, test_raw, type = "prob")
 
-cat("\n--- C5.0 DECISION TREE ---\n")
-print(confusionMatrix(pred_tree, actual_raw, positive = "Yes"))
+# 2. Extract the "Yes" probability column
+# If your model levels are 1/0, change "Yes" to "1"
+prob_yes_tree <- prob_tree[, "Yes"]
+
+# 3. Apply the 0.34 threshold
+# If the probability is > 0.34, label it "Yes", otherwise "No"
+pred_tree_34 <- factor(ifelse(prob_yes_tree > 0.5, "Yes", "No"), levels = c("No", "Yes"))
+
+cat("\n--- C5.0 DECISION TREE (Threshold: 0.34) ---\n")
+# 4. Generate the Confusion Matrix
+print(confusionMatrix(pred_tree_34, actual_raw, positive = "Yes"))
+
+# ---------------------------------------------------------
+# 6. RANDOM FOREST EXPERT (Using Raw Data)
+# ---------------------------------------------------------
+m_rf_expert <- readRDS("rf_model.rds")
+
+# Generate probabilities
+prob_rf_expert <- predict(m_rf_expert, test_raw, type = "prob")
+
+# Apply standard 0.5 threshold or your preferred custom threshold
+pred_rf_expert <- factor(ifelse(prob_rf_expert[, "Yes"] > 0.34, "Yes", "No"), 
+                         levels = c("No", "Yes"))
+
+cat("\n--- RANDOM FOREST EXPERT ---\n")
+cm_rf_expert <- confusionMatrix(pred_rf_expert, actual_raw, positive = "Yes")
+print(cm_rf_expert)
+
+# ---------------------------------------------------------
+# MASTER PERFORMANCE SUMMARY TABLE (Sorted by Sensitivity)
+# ---------------------------------------------------------
+library(knitr)
+library(dplyr)
+library(randomForest) 
+
+# 1. Helper function to extract metrics with a 'Type' tag
+extract_metrics <- function(cm, model_name, type) {
+  data.frame(
+    Category = type,
+    Model = model_name,
+    Accuracy = round(as.numeric(cm$overall["Accuracy"]), 4),
+    Kappa = round(as.numeric(cm$overall["Kappa"]), 4),
+    Sensitivity = round(as.numeric(cm$byClass["Sensitivity"]), 4),
+    Specificity = round(as.numeric(cm$byClass["Specificity"]), 4),
+    stringsAsFactors = FALSE
+  )
+}
+
+# 2. Combine all models into one data frame
+# Note: Ensure these CM objects are named correctly based on your previous chunks
+performance_report <- rbind(
+  # Stacked Level 1 Models
+  extract_metrics(cm_tree, "Meta-Tree (C5.0)", "Stacked"),
+  extract_metrics(cm_rf, "Meta-Random Forest", "Stacked"),
+  
+  # Individual Expert Models
+  extract_metrics(cm_rf_expert, "Random Forest", "Individual"),
+  extract_metrics(confusionMatrix(pred_glm, actual_raw, positive = "Yes"), "Logistic Regression", "Individual"),
+  extract_metrics(confusionMatrix(pred_knn, actual_dummy, positive = "1"), "KNN", "Individual"),
+  extract_metrics(confusionMatrix(pred_ann, actual_dummy, positive = "1"), "Neural Network", "Individual"),
+  extract_metrics(confusionMatrix(pred_svm_34, actual_dummy, positive = "1"), "SVM", "Individual"),
+  extract_metrics(confusionMatrix(pred_tree_34, actual_raw, positive = "Yes"), "C5.0 Tree", "Individual")
+)
+
+# 3. THE SORT: Order by Sensitivity in descending order (highest to lowest)
+performance_report <- performance_report[order(performance_report$Sensitivity, decreasing = TRUE), ]
+
+# 4. Final Formatting: Multiply by 100 for percentage-style reading
+performance_report_clean <- performance_report %>%
+  mutate(across(c(Accuracy, Kappa, Sensitivity, Specificity), ~ .x * 100)) %>%
+  rename(`Sensitivity (Catch Rate %)` = Sensitivity,
+         `Accuracy (%)` = Accuracy)
+
+# 5. Display the Table
+kable(performance_report_clean, 
+      caption = "414-Insurance: Model Leaderboard (Ordered by Sensitivity)",
+      align = "llcccc")
+
+# Save final results for your report
+saveRDS(performance_report_clean, "final_model_comparison_table.rds")
 ```
 
