@@ -1,0 +1,19 @@
+---
+title: "GroupFinalReport"
+output: html_document
+---
+
+# Executive Summary 
+
+414 Insurance's dataset with depression data can reveal key characteristics as early mental illness predictors. Being able to quickly identify at-risk patients is an important priority for 414 Insurance, as it leads to preventions of the most extreme mental illness scenarios. 
+
+We use data-forward methodologies to assess mental illness patterns, recommending a targeted approach to predict onset of mental illness. Our approach utilizes supervised and unsupervised algorithmic learning models to find target characteristics. We demonstrate our work with each type of algorithm to propose the most effective strategy for identifying and preventing onset of mental illness. 
+# Background
+
+Depression--characterized by symptoms ranging from persistent low mood, loss of interest, sucidial thoughts-- is a common, clinically significant, and expensive medical condition for insurers. According to a Gallup poll, 3 in 10 US adults have been diagnosed with depression at some point in their lives ([Gallup](https://news.gallup.com/poll/505745/depression-rates-reach-new-highs.aspx)). In colleges across the US, 37% of the student population reported moderate to severe depressive symptoms in 2025 ([University of Michigan](https://sph.umich.edu/news/2025posts/college-student-mental-health-third-consecutive-year-improvement.html)). 
+
+While there's a perception of depression as a benign issue, depression can cause difficulty maintaining relationships, work, or self-care. This causes it to compound into other chronic conditions, which increases total medical spending. In fact, 414 Insurance sees a 73% difference--a difference of $763-- between insurees with and without depression ([Health System Tracker](https://www.healthsystemtracker.org/brief/privately-insured-people-with-depression-and-anxiety-face-high-out-of-pocket-costs/)). 
+
+Therefore, identifying high-risk members earlier opens an opportunity to target interventions before costs escalate ([Greenberg et al](https://pmc.ncbi.nlm.nih.gov/articles/PMC10499687/)).
+
+
