@@ -41,3 +41,16 @@ The following links provide the detailed technical breakdown of our data process
 * [Stacked Model Architecture](StackedModel.html)
 * [Combined Probabilities Analysis](CombinedProbs.html)
 * [Final Stacked Model Predictions](StackModelPredictions.html)
+
+
+### 4. Interactive Tools
+Our ensemble model is hosted as a web application for real-time risk assessment.
+
+<div style="text-align: center; margin: 20px 0;">
+  <a href="https://j33c4y-daniel-myung.shinyapps.io/Interactive/" 
+     target="_blank" 
+     class="btn btn-success btn-lg" 
+     style="padding: 15px 30px; font-weight: bold;">
+     Launch Interactive Prediction Portal
+  </a>
+</div>
