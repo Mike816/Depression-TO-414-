@@ -32,14 +32,14 @@ The following links provide the detailed technical breakdown of our data process
 ### 2. Supervised Learning Models
 * [Generalized Linear Model (GLM) for Depression](glm_depression.html)
 * [K-Nearest Neighbors (kNN) Analysis](knn_2.html)
-* [Decision Tree (DT2) Results](DT2.html)
+* [Decision Tree and Random Forest Results](DT2.html)
 * [Support Vector Machine (SVM) Classification](SVM.html)
 * [Artificial Neural Network (ANN) & Confusion Matrix](ANN-with-conf-matrix.html)
 
 ### 3. Ensemble Methods & Final Predictions
+* [Combined Probabilities](CombinedProbs.html)
 * [Secondary Data Partitioning](SecondSplitData.html)
 * [Stacked Model Architecture](StackedModel.html)
-* [Combined Probabilities Analysis](CombinedProbs.html)
 * [Final Stacked Model Predictions](StackModelPredictions.html)
 
 
