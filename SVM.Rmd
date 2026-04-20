@@ -1,7 +1,14 @@
 ---
 title: "SVM"
-output: html_document
+output:
+  html_document:
+    theme: flatly
+    toc: yes
+    toc_float:
+      collapsed: true
 ---
+
+[← Back to Main Report](GroupFinalReport.html)
 
 
 ```{r, cache=TRUE}
@@ -139,11 +146,3 @@ actual_values <- factor(test_dummy$history_of_mental_illness_yes, levels = c("0"
 cm_low_svm <- confusionMatrix(pred_low_thresh, actual_values, positive = "1")
 print(cm_low_svm)
 ```
-
-# summary 
-
-After testing all the models, splinedot was the best, both in terms of Kappa and sensitivity. It got .05 kappa with 0.3 sensitivity. 
-
-Most of the kernels performed quite terribly. Many did not hit a single prediction. The bessel model actually had a negative kappa (-0.0091). 
-
-We hypothesize that spline dot's ability to work with non-linear connections helped it become the best kernel of the bunch. The spline kernel is known for its performance especially in sparse datasets and regression.  

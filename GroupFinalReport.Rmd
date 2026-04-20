@@ -21,7 +21,7 @@ Therefore, identifying high-risk members earlier opens an opportunity to target 
 The following links provide the detailed technical breakdown of our data processing and modeling pipeline.
 
 ### 1. Data Preparation and Exploration
-* [Main Analysis Overview](Main.html)
+* [Main Data Cleaning](Main.html)
 * [Initial Training and Testing Split](trainingtestingsplit.html)
 * [Secondary Data Partitioning](SecondSplitData.html)
 
@@ -30,7 +30,7 @@ The following links provide the detailed technical breakdown of our data process
 * [K-Nearest Neighbors (kNN) Analysis](knn_2.html)
 * [Decision Tree (DT2) Results](DT2.html)
 * [Support Vector Machine (SVM) Classification](SVM.html)
-* [Artificial Neural Network (ANN) & Confusion Matrix](ANN%20with%20conf%20matrix.html)
+* [Artificial Neural Network (ANN) & Confusion Matrix](ANN-with-conf-matrix.html)
 
 ### 3. Ensemble Methods & Final Predictions
 * [Stacked Model Architecture](StackedModel.html)

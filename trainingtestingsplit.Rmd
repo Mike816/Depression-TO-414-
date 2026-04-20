@@ -1,7 +1,14 @@
 ---
-title: "trainingtestingsplit"
-output: html_document
+title: "Training/Testing Data Split"
+output:
+  html_document:
+    theme: flatly
+    toc: yes
+    toc_float:
+      collapsed: true
 ---
+
+[← Back to Main Report](GroupFinalReport.html)
 
 # import data
 

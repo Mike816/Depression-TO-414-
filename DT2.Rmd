@@ -1,9 +1,14 @@
 ---
 title: "DT2"
-author: "Daniel Myung"
-date: "2026-04-13"
-output: html_document
+output:
+  html_document:
+    theme: flatly
+    toc: yes
+    toc_float:
+      collapsed: true
 ---
+
+[← Back to Main Report](GroupFinalReport.html)
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
