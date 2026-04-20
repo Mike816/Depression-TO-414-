@@ -16,4 +16,23 @@ While there's a perception of depression as a benign issue, depression can cause
 
 Therefore, identifying high-risk members earlier opens an opportunity to target interventions before costs escalate ([Greenberg et al](https://pmc.ncbi.nlm.nih.gov/articles/PMC10499687/)).
 
+# Technical Analysis & Model Modules
 
+The following links provide the detailed technical breakdown of our data processing and modeling pipeline.
+
+### 1. Data Preparation and Exploration
+* [Main Analysis Overview](Main.html)
+* [Initial Training and Testing Split](trainingtestingsplit.html)
+* [Secondary Data Partitioning](SecondSplitData.html)
+
+### 2. Supervised Learning Models
+* [Generalized Linear Model (GLM) for Depression](glm_depression.html)
+* [K-Nearest Neighbors (kNN) Analysis](knn_2.html)
+* [Decision Tree (DT2) Results](DT2.html)
+* [Support Vector Machine (SVM) Classification](SVM.html)
+* [Artificial Neural Network (ANN) & Confusion Matrix](ANN%20with%20conf%20matrix.html)
+
+### 3. Ensemble Methods & Final Predictions
+* [Stacked Model Architecture](StackedModel.html)
+* [Combined Probabilities Analysis](CombinedProbs.html)
+* [Final Stacked Model Predictions](StackModelPredictions.html)
