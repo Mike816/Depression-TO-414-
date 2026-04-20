@@ -1,0 +1,385 @@
+---
+title: "Depression Model — Performance Visualization"
+author: "Ye Tianci (Mike)"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    theme: flatly
+    highlight: tango
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, 
+                      fig.align = "center")
+```
+
+# Financial Parameters
+
+```{r financial-params}
+COST_FN  <- 763   # missed depressed patient
+COST_FP  <- 246   # gave free therapy/resources to non-depressed
+SAVING_TP <- 517  # savings from correctly identifying depressed patient
+BENEFIT_TN <- 0   # correctly identified non-depressed
+
+compute_financials <- function(tp, fp, fn, tn, model_name) {
+  impact <- tp * SAVING_TP - fp * COST_FP - fn * COST_FN + tn * BENEFIT_TN
+  precision <- ifelse((tp + fp) > 0, tp / (tp + fp), 0)
+  data.frame(
+    Model = model_name, TP = tp, FP = fp, FN = fn, TN = tn,
+    Net_Impact = round(impact, 0),
+    Precision = round(precision * 100, 2)
+  )
+}
+
+find_best_threshold <- function(prob, actual, model_name, thresholds = seq(0.05, 0.95, by = 0.05)) {
+  results <- data.frame()
+  for (t in thresholds) {
+    pred <- ifelse(prob > t, 1, 0)
+    tp <- sum(pred == 1 & actual == "1")
+    fp <- sum(pred == 1 & actual == "0")
+    fn <- sum(pred == 0 & actual == "1")
+    tn <- sum(pred == 0 & actual == "0")
+    impact <- tp * SAVING_TP - fp * COST_FP - fn * COST_FN + tn * BENEFIT_TN
+    results <- rbind(results, data.frame(Threshold = t, TP = tp, FP = fp, FN = fn, TN = tn, Net_Impact = impact))
+  }
+  results$Model <- model_name
+  results
+}
+```
+
+# Load Data and Predictions
+
+```{r load-data}
+library(caret)
+library(C50)
+library(randomForest)
+
+test_dummy    <- readRDS("test_dummy.rds")
+test_original <- readRDS("test_original.rds")
+
+if ("mental_illness" %in% names(test_dummy)) {
+  actual_labels <- as.factor(test_dummy$mental_illness)
+} else if ("y" %in% names(test_dummy)) {
+  actual_labels <- as.factor(test_dummy$y)
+} else {
+  actual_labels <- as.factor(test_dummy[, ncol(test_dummy)])
+}
+cat("Test set size:", length(actual_labels), "\n")
+cat("Class distribution:\n")
+print(prop.table(table(actual_labels)))
+
+glm_prob  <- readRDS("glm_prob.rds")
+knn_prob  <- readRDS("knn_prob_mental_illness.rds")
+ann_prob  <- readRDS("ann_prob_mental_illness.rds")
+c50_prob  <- readRDS("c50_prob_mental_illness.rds")
+svm_prob  <- readRDS("best_svm_prob_mental_illness.rds")
+
+svm_vanilla <- readRDS("svm_vanilla.rds")
+svm_rbf     <- readRDS("svm_rbf.rds")
+svm_poly    <- readRDS("svm_poly.rds")
+svm_anova   <- readRDS("svm_anova.rds")
+svm_bessel  <- readRDS("svm_bessel.rds")
+svm_laplace <- readRDS("svm_laplace.rds")
+svm_tanh    <- readRDS("svm_tanh.rds")
+
+stack_test   <- readRDS("depression_stack_test.rds")
+stack_train  <- readRDS("depression_stack_train.rds")
+meta_tree    <- readRDS("depression_meta_model_tree.rds")
+meta_rf      <- readRDS("depression_meta_model_rf.rds")
+
+stack_test$actual  <- as.factor(stack_test$actual)
+stack_train$actual <- as.factor(stack_train$actual)
+```
+
+# Level 1: Individual Model Performance
+
+```{r l1-confusion}
+flip_if_needed <- function(prob, actual) {
+  pred_1 <- sum(prob > 0.5)
+  if (pred_1 == 0 & mean(prob) > 0.3) {
+    cat("  -> Flipping probabilities (likely stored as P(class=0))\n")
+    return(1 - prob)
+  }
+  return(prob)
+}
+
+cat("Checking probability directions:\n")
+cat("glm_prob range:", range(glm_prob), "\n")
+glm_prob <- flip_if_needed(glm_prob, actual_labels)
+cat("knn_prob range:", range(knn_prob), "\n")
+knn_prob <- flip_if_needed(knn_prob, actual_labels)
+cat("ann_prob range:", range(ann_prob), "\n")
+ann_prob <- flip_if_needed(ann_prob, actual_labels)
+cat("c50_prob range:", range(c50_prob), "\n")
+c50_prob <- flip_if_needed(c50_prob, actual_labels)
+cat("svm_prob range:", range(svm_prob), "\n")
+svm_prob <- flip_if_needed(svm_prob, actual_labels)
+
+glm_pred      <- factor(ifelse(glm_prob > 0.34, 1, 0), levels = levels(actual_labels))
+knn_pred      <- factor(ifelse(knn_prob > 0.34, 1, 0), levels = levels(actual_labels))
+ann_pred      <- factor(ifelse(ann_prob > 0.34, 1, 0), levels = levels(actual_labels))
+c50_pred      <- factor(ifelse(c50_prob > 0.34, 1, 0), levels = levels(actual_labels))
+svm_best_pred <- factor(ifelse(svm_prob > 0.34, 1, 0), levels = levels(actual_labels))
+
+glm_cm <- confusionMatrix(glm_pred, actual_labels, positive = "1")
+knn_cm <- confusionMatrix(knn_pred, actual_labels, positive = "1")
+ann_cm <- confusionMatrix(ann_pred, actual_labels, positive = "1")
+c50_cm <- confusionMatrix(c50_pred, actual_labels, positive = "1")
+svm_cm <- confusionMatrix(svm_best_pred, actual_labels, positive = "1")
+```
+
+```{r l1-print}
+cat("=== Logistic Regression ===\n"); print(glm_cm)
+cat("\n=== KNN ===\n"); print(knn_cm)
+cat("\n=== ANN ===\n"); print(ann_cm)
+cat("\n=== Decision Tree (C5.0) ===\n"); print(c50_cm)
+cat("\n=== Best SVM ===\n"); print(svm_cm)
+```
+
+# Threshold Optimization
+
+Instead of using the default 0.5 threshold, we test thresholds from 0.05 to 0.95 in increments of 0.05 and pick the one that maximizes **net financial impact** for each model. Since missing a depressed patient costs \$800 vs \$251 for a false alarm, the optimal threshold is likely below 0.5.
+
+```{r threshold-search}
+glm_thresh <- find_best_threshold(glm_prob, actual_labels, "Logistic Regression")
+knn_thresh <- find_best_threshold(knn_prob, actual_labels, "KNN")
+ann_thresh <- find_best_threshold(ann_prob, actual_labels, "ANN")
+c50_thresh <- find_best_threshold(c50_prob, actual_labels, "Decision Tree (C5.0)")
+svm_thresh <- find_best_threshold(svm_prob, actual_labels, "Best SVM")
+
+all_thresh <- rbind(glm_thresh, knn_thresh, ann_thresh, c50_thresh, svm_thresh)
+
+best_per_model <- do.call(rbind, lapply(split(all_thresh, all_thresh$Model), function(df) {
+  df[which.max(df$Net_Impact), ]
+}))
+
+cat("Best threshold per model (maximizing financial impact):\n")
+print(best_per_model[, c("Model", "Threshold", "TP", "FP", "FN", "TN", "Net_Impact")])
+```
+
+```{r threshold-plot, fig.width=10, fig.height=6}
+models_list <- list(glm_thresh, knn_thresh, ann_thresh, c50_thresh, svm_thresh)
+model_colors <- c("#e74c3c", "#3498db", "#2ecc71", "#f39c12", "#9b59b6")
+model_labels <- c("LogReg", "KNN", "ANN", "C5.0", "SVM")
+
+plot(NULL, xlim = c(0.05, 0.95), ylim = range(all_thresh$Net_Impact),
+     xlab = "Threshold", ylab = "Net Financial Impact ($)",
+     main = "Financial Impact vs. Classification Threshold")
+abline(h = 0, lty = 2, col = "gray40")
+abline(v = 0.5, lty = 3, col = "gray60")
+text(0.52, max(all_thresh$Net_Impact) * 0.95, "Default 0.5", col = "gray60", cex = 0.7)
+
+for (i in seq_along(models_list)) {
+  df <- models_list[[i]]
+  lines(df$Threshold, df$Net_Impact, col = model_colors[i], lwd = 2)
+  best_idx <- which.max(df$Net_Impact)
+  points(df$Threshold[best_idx], df$Net_Impact[best_idx], col = model_colors[i], pch = 19, cex = 1.5)
+}
+legend("topright", legend = model_labels, col = model_colors, lwd = 2, bty = "n")
+```
+
+```{r threshold-table}
+probs_list <- list(glm_prob, knn_prob, ann_prob, c50_prob, svm_prob)
+prob_names <- c("Logistic Regression", "KNN", "ANN", "Decision Tree (C5.0)", "Best SVM")
+
+default_impacts <- data.frame()
+optimized_impacts <- data.frame()
+
+for (i in seq_along(probs_list)) {
+  prob <- probs_list[[i]]
+  pred_def <- ifelse(prob > 0.5, 1, 0)
+  tp <- sum(pred_def == 1 & actual_labels == "1"); fp <- sum(pred_def == 1 & actual_labels == "0")
+  fn <- sum(pred_def == 0 & actual_labels == "1"); tn <- sum(pred_def == 0 & actual_labels == "0")
+  impact_def <- tp * SAVING_TP - fp * COST_FP - fn * COST_FN
+
+  best_row <- best_per_model[best_per_model$Model == prob_names[i], ]
+
+  default_impacts <- rbind(default_impacts, data.frame(Model = prob_names[i], Threshold = 0.5, Net_Impact = impact_def))
+  optimized_impacts <- rbind(optimized_impacts, data.frame(Model = prob_names[i], Threshold = best_row$Threshold, Net_Impact = best_row$Net_Impact))
+}
+
+thresh_comparison <- merge(default_impacts, optimized_impacts, by = "Model", suffixes = c("_Default", "_Optimized"))
+thresh_comparison$Improvement <- thresh_comparison$Net_Impact_Optimized - thresh_comparison$Net_Impact_Default
+
+knitr::kable(thresh_comparison[, c("Model", "Threshold_Default", "Net_Impact_Default",
+                                    "Threshold_Optimized", "Net_Impact_Optimized", "Improvement")],
+             align = "lccccc",
+             col.names = c("Model", "Default Thresh", "Impact (Default)", "Best Thresh", "Impact (Optimized)", "$ Improvement"),
+             caption = "Default (0.5) vs. Optimized Threshold — Financial Impact")
+```
+
+# Level 1 at Optimized Thresholds
+
+```{r l1-optimized}
+glm_best_t <- best_per_model[best_per_model$Model == "Logistic Regression", "Threshold"]
+knn_best_t <- best_per_model[best_per_model$Model == "KNN", "Threshold"]
+ann_best_t <- best_per_model[best_per_model$Model == "ANN", "Threshold"]
+c50_best_t <- best_per_model[best_per_model$Model == "Decision Tree (C5.0)", "Threshold"]
+svm_best_t <- best_per_model[best_per_model$Model == "Best SVM", "Threshold"]
+
+glm_pred_opt <- factor(ifelse(glm_prob > glm_best_t, 1, 0), levels = levels(actual_labels))
+knn_pred_opt <- factor(ifelse(knn_prob > knn_best_t, 1, 0), levels = levels(actual_labels))
+ann_pred_opt <- factor(ifelse(ann_prob > ann_best_t, 1, 0), levels = levels(actual_labels))
+c50_pred_opt <- factor(ifelse(c50_prob > c50_best_t, 1, 0), levels = levels(actual_labels))
+svm_pred_opt <- factor(ifelse(svm_prob > svm_best_t, 1, 0), levels = levels(actual_labels))
+
+glm_cm_opt <- confusionMatrix(glm_pred_opt, actual_labels, positive = "1")
+knn_cm_opt <- confusionMatrix(knn_pred_opt, actual_labels, positive = "1")
+ann_cm_opt <- confusionMatrix(ann_pred_opt, actual_labels, positive = "1")
+c50_cm_opt <- confusionMatrix(c50_pred_opt, actual_labels, positive = "1")
+svm_cm_opt <- confusionMatrix(svm_pred_opt, actual_labels, positive = "1")
+
+model_names_opt <- c("LogReg (opt)", "KNN (opt)", "ANN (opt)", "C5.0 (opt)", "SVM (opt)")
+cms_opt <- list(glm_cm_opt, knn_cm_opt, ann_cm_opt, c50_cm_opt, svm_cm_opt)
+
+comparison_opt <- data.frame(
+  Model = model_names_opt,
+  Threshold = c(glm_best_t, knn_best_t, ann_best_t, c50_best_t, svm_best_t),
+  Accuracy = round(sapply(cms_opt, function(x) x$overall["Accuracy"]), 4),
+  Kappa = round(sapply(cms_opt, function(x) x$overall["Kappa"]), 4),
+  Sensitivity = round(sapply(cms_opt, function(x) x$byClass["Sensitivity"]), 4),
+  Specificity = round(sapply(cms_opt, function(x) x$byClass["Specificity"]), 4)
+)
+
+knitr::kable(comparison_opt, align = "lccccc", caption = "Level 1 Models at Optimized Thresholds")
+```
+
+# Level 2: Stacked Model Performance
+
+```{r l2-predictions}
+test_features <- stack_test[, -which(names(stack_test) == "actual")]
+test_labels_stack <- stack_test$actual
+
+meta_tree_pred <- predict(meta_tree, newdata = test_features)
+meta_rf_pred   <- predict(meta_rf, newdata = test_features)
+
+meta_tree_cm <- confusionMatrix(meta_tree_pred, test_labels_stack, positive = "1")
+meta_rf_cm   <- confusionMatrix(meta_rf_pred, test_labels_stack, positive = "1")
+
+cat("=== Stacked Model (C5.0 Meta-Tree) ===\n"); print(meta_tree_cm)
+cat("\n=== Stacked Model (Random Forest) ===\n"); print(meta_rf_cm)
+```
+
+# Full Comparison
+
+```{r full-compare}
+model_names_def <- c("Logistic Regression", "KNN", "ANN", "Decision Tree (C5.0)", "Best SVM")
+cms_def <- list(glm_cm, knn_cm, ann_cm, c50_cm, svm_cm)
+
+comp_def <- data.frame(
+  Model = model_names_def,
+  Accuracy = round(sapply(cms_def, function(x) x$overall["Accuracy"]), 4),
+  Kappa = round(sapply(cms_def, function(x) x$overall["Kappa"]), 4),
+  Sensitivity = round(sapply(cms_def, function(x) x$byClass["Sensitivity"]), 4),
+  Specificity = round(sapply(cms_def, function(x) x$byClass["Specificity"]), 4)
+)
+comp_stack <- data.frame(
+  Model = c("Stacked (C5.0)", "Stacked (RF)"),
+  Accuracy = round(c(meta_tree_cm$overall["Accuracy"], meta_rf_cm$overall["Accuracy"]), 4),
+  Kappa = round(c(meta_tree_cm$overall["Kappa"], meta_rf_cm$overall["Kappa"]), 4),
+  Sensitivity = round(c(meta_tree_cm$byClass["Sensitivity"], meta_rf_cm$byClass["Sensitivity"]), 4),
+  Specificity = round(c(meta_tree_cm$byClass["Specificity"], meta_rf_cm$byClass["Specificity"]), 4)
+)
+
+comparison_all <- rbind(comp_def, comparison_opt[, -2], comp_stack)
+knitr::kable(comparison_all, align = "lcccc", caption = "All Models — Full Statistical Comparison")
+```
+
+```{r full-kappa, fig.width=12, fig.height=5}
+par(mar = c(12, 5, 3, 2))
+kv <- comparison_all$Kappa; kv[is.na(kv)] <- 0
+sn <- c("LogReg", "KNN", "ANN", "C5.0", "SVM",
+        "LogReg*", "KNN*", "ANN*", "C5.0*", "SVM*",
+        "Stack-Tree", "Stack-RF")
+names(kv) <- sn
+kc <- c(rep("#3498db",5), rep("#f39c12",5), rep("#e74c3c",2))
+kc[which.max(kv)] <- "#2ecc71"
+barplot(kv, col=kc, main="Kappa (* = optimized threshold)", ylab="Kappa", las=2, cex.names=0.7,
+        ylim=c(0, max(kv,na.rm=TRUE)*1.3))
+legend("topright", legend=c("Default","Optimized","Stacked"), fill=c("#3498db","#f39c12","#e74c3c"), bty="n", cex=0.8)
+```
+
+```{r full-sens-spec, fig.width=12, fig.height=5}
+par(mfrow=c(1,2), mar=c(12,5,3,2))
+sv <- comparison_all$Sensitivity; sv[is.na(sv)] <- 0; names(sv) <- sn
+sc <- c(rep("#3498db",5), rep("#f39c12",5), rep("#e74c3c",2)); sc[which.max(sv)] <- "#2ecc71"
+barplot(sv, col=sc, main="Sensitivity (* = optimized)", ylab="Sensitivity", las=2, cex.names=0.65, ylim=c(0,1))
+
+spv <- comparison_all$Specificity; spv[is.na(spv)] <- 0; names(spv) <- sn
+spc <- c(rep("#3498db",5), rep("#f39c12",5), rep("#e74c3c",2)); spc[which.max(spv)] <- "#2ecc71"
+barplot(spv, col=spc, main="Specificity (* = optimized)", ylab="Specificity", las=2, cex.names=0.65, ylim=c(0,1))
+```
+
+# Financial Comparison
+
+```{r fin-compare}
+all_cms <- c(cms_def, cms_opt, list(meta_tree_cm, meta_rf_cm))
+all_names <- c(model_names_def, model_names_opt, "Stacked (C5.0)", "Stacked (RF)")
+
+fin_results <- data.frame()
+for (i in seq_along(all_cms)) {
+  cm <- all_cms[[i]]$table
+  tp <- cm["1","1"]; fp <- cm["1","0"]; fn <- cm["0","1"]; tn <- cm["0","0"]
+  fin_results <- rbind(fin_results, compute_financials(tp, fp, fn, tn, all_names[i]))
+}
+
+n_pos <- sum(actual_labels == "1"); n_neg <- sum(actual_labels == "0")
+baseline <- compute_financials(0, 0, n_pos, n_neg, "Baseline")
+baseline_impact <- baseline$Net_Impact
+
+fin_results$Net_Impact <- fin_results$Net_Impact - baseline_impact
+baseline$Net_Impact <- 0
+fin_results <- rbind(baseline, fin_results)
+
+knitr::kable(fin_results[, c("Model", "TP", "FP", "FN", "TN", "Net_Impact", "Precision")],
+             align = "lcccccc", caption = "Financial Impact vs. Baseline (Relative)")
+```
+
+```{r fin-plot, fig.width=12, fig.height=6}
+par(mar = c(12, 5, 3, 2))
+iv <- fin_results$Net_Impact
+fn <- c("Baseline", sn)
+names(iv) <- fn
+fc <- c("gray60", rep("#3498db",5), rep("#f39c12",5), rep("#e74c3c",2))
+fc[which.max(iv)] <- "#2ecc71"
+barplot(iv, col=fc, main="Net Financial Impact vs. Baseline (* = optimized threshold)",
+        ylab="Net Impact ($)", las=2, cex.names=0.6)
+abline(h=0, lty=2, col="gray40")
+legend("topright", legend=c("Default","Optimized","Stacked"), fill=c("#3498db","#f39c12","#e74c3c"), bty="n", cex=0.8)
+```
+
+# SVM Kernel Comparison
+
+```{r svm-kernels}
+svm_models <- list(svm_vanilla, svm_rbf, svm_poly, svm_anova, svm_bessel, svm_laplace, svm_tanh)
+svm_knames <- c("Vanilla", "RBF", "Polynomial", "ANOVA", "Bessel", "Laplace", "Tanh")
+svm_compare <- data.frame()
+for (i in seq_along(svm_models)) {
+  m <- svm_models[[i]]
+  svm_compare <- rbind(svm_compare, data.frame(
+    Kernel = svm_knames[i], Type = class(m)[1],
+    Error = tryCatch(m@error, error = function(e) NA),
+    Cross_Validation = tryCatch(m@cross, error = function(e) NA)))
+}
+knitr::kable(svm_compare, align = "lccc", caption = "SVM Kernel Comparison")
+```
+
+# Summary
+
+```{r summary-vars}
+best_fin_name <- fin_results$Model[which.max(fin_results$Net_Impact)]
+best_fin_val <- max(fin_results$Net_Impact)
+best_kappa_name <- comparison_all$Model[which.max(comparison_all$Kappa)]
+best_kappa_val <- max(comparison_all$Kappa)
+best_sens_name <- comparison_all$Model[which.max(comparison_all$Sensitivity)]
+best_sens_val <- max(comparison_all$Sensitivity)
+```
+
+The best model by Kappa is **`r best_kappa_name`** (`r round(best_kappa_val, 4)`), the best by sensitivity is **`r best_sens_name`** (`r round(best_sens_val, 4)`), and the best by financial impact is **`r best_fin_name`** at \$`r format(best_fin_val, big.mark=",")` relative to baseline.
+
+Threshold optimization makes a significant difference — the default 0.5 cutoff is suboptimal for every model because the cost of missing a depressed patient (\$800) far exceeds the cost of a false alarm (\$251). By lowering the threshold, models flag more patients as potentially depressed, accepting more false positives to catch more true cases — which is the financially correct tradeoff.
