@@ -1,11 +1,8 @@
 ---
 title: "knn_2"
-output:
-  html_document:
-    theme: flatly
-    toc: yes
-    toc_float:
-      collapsed: true
+author: "Daniel Myung"
+date: "2026-04-13"
+output: html_document
 ---
 
 [← Back to Main Report](GroupFinalReport.html)
@@ -14,7 +11,11 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+In this section, we apply the K-Nearest Neighbors (KNN) model to predict whether an individual has a history of mental illness. KNN is a non-parametric, instance-based classification method that makes predictions by identifying the k most similar observations in the training data and assigning the majority class among those neighbors to each new data point. 
+
+The value of k = 15 was selected after testing multiple values, as it achieved the best Kappa score on the test set. A smaller k risks overfitting by being too sensitive to noise, while a larger k risks underfitting by over-smoothing the decision boundary. k = 15 strikes the best balance between these extremes.
+
+```{r, cache = TRUE}
 library(class)
 library(caret)
 train_dummy <- readRDS("train_dummy.rds")
@@ -58,3 +59,9 @@ confusionMatrix(knnpred_mental, test_dummy[[target_name_mental]], positive = "1"
 saveRDS(knn_prob_mental, "knn_prob_mental_illness.rds")
 saveRDS(knnpred_mental, "knn_pred_mental_illness.rds")
 ```
+
+The KNN model achieves an accuracy of 67%, which falls below the No Information Rate of 69.2%, meaning a model that always predicts the majority class would actually perform better. This is confirmed by a Kappa of 0.026. The stark contrast between specificity (92.6%) and sensitivity (9.5%) reflects the class imbalance in the data: since roughly 69% of observations belong to class 0 (no history of mental illness), the model's 15 neighbors will be dominated by the majority class the vast majority of the time, pushing predictions toward 0 by default. 
+
+As a result, the model becomes very effective at identifying individuals without a history of mental illness (true negatives) but fails to detect most of those who do have one (true positives). In practice, out of 6,365 individuals who actually had a history of mental illness, the model only correctly identified 603. 
+
+Compared to the GLM, KNN performs notably worse. While KNN achieves a slightly higher raw accuracy (67% vs 62.5%), its Kappa of 0.026 is far below the GLM's 0.143.
