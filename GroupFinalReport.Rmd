@@ -1,6 +1,11 @@
 ---
 title: "GroupFinalReport"
-output: html_document
+output:
+  html_document:
+    theme: flatly
+    toc: yes
+    toc_float:
+      collapsed: true
 ---
 
 # Executive Summary 
@@ -23,7 +28,6 @@ The following links provide the detailed technical breakdown of our data process
 ### 1. Data Preparation and Exploration
 * [Main Data Cleaning](Main.html)
 * [Initial Training and Testing Split](trainingtestingsplit.html)
-* [Secondary Data Partitioning](SecondSplitData.html)
 
 ### 2. Supervised Learning Models
 * [Generalized Linear Model (GLM) for Depression](glm_depression.html)
@@ -33,6 +37,7 @@ The following links provide the detailed technical breakdown of our data process
 * [Artificial Neural Network (ANN) & Confusion Matrix](ANN-with-conf-matrix.html)
 
 ### 3. Ensemble Methods & Final Predictions
+* [Secondary Data Partitioning](SecondSplitData.html)
 * [Stacked Model Architecture](StackedModel.html)
 * [Combined Probabilities Analysis](CombinedProbs.html)
 * [Final Stacked Model Predictions](StackModelPredictions.html)
