@@ -28,7 +28,14 @@ The following links provide the detailed technical breakdown of our data process
 <div id="Cleaning">
 
 ### 1. Data Preparation and Exploration
+# Main
+The first phase of the analysis focuses on preparing the data for modeling. The raw dataset is imported from a CSV file and a random 10% sample is drawn to reduce computational burden. The Name column is removed as it carries no predictive value, and all character variables are coerced to factors. A preliminary inspection of the data structure and summary statistics is then performed. The cleaned dataset is subsequently saved as an RDS file for reproducibility.
+
 * [Main Data Cleaning](Main.html)
+
+# Initial Training and Testing Split
+In the second file, the cleaned data is split into training and test sets following two parallel pipelines. The first preserves the original factor structure for tree-based models. The second converts the data into a fully dummy-encoded and min-max normalized format, suitable for distance- and gradient-based models such as KNN, ANN, and SVM. Both pipelines use a 50/50 split with the same random seed to ensure comparability across models.
+
 * [Initial Training and Testing Split](trainingtestingsplit.html)
 </div>
 
