@@ -109,3 +109,167 @@ Our ensemble model is hosted as a web application for real-time risk assessment.
      Launch Interactive Prediction Portal
   </a>
 </div>
+
+### 4. Financial analysis 
+Although the statistical performance of our models are significant, the true measure of their efficacy is in their financial performance. More specifically, we define this to be the amount of money the models will save 414 insurance compared to the base line of labeling all patients as non-depressed. 
+
+To ensure that this analysis is as accurate as possible, we have created the following cost matrix from real world data:
+
+* **False Negative** (the model missed a depressed patient)............................**Cost**: \$800
+* **False Positive** (incorrectly labeled a non-depressed patient as depressed)....**Cost**: \$251
+* **True Negative** (correctly identified a non-depressed patient).....................**Cost**: \$0
+* **True Positive** (correcting predicting a depressed patient).........................**Savings**: \$549
+
+More specically, we found a difference of \$763 between non-depressed patient spending and depressed patient spending ([Health System Tracking](https://www.healthsystemtracker.org/brief/privately-insured-people-with-depression-and-anxiety-face-high-out-of-pocket-costs/#Annual%20out-of-pocket%C2%A0spending%20for%20privately-insured%20enrollees%20treated%20for%20depression%20and/or%20anxiety,%20compared%20to%20enrollees%20with%20no%20mental%20health%20diagnoses,%202021)). We rounded to $800 to account for economic burden. We found the savings from therapy and costs of depression from [Statista](https://www.statista.com/statistics/1481121/depression-cost-and-potential-savings-with-pat-in-the-us-and-europe/) (249,000 and 366,600). 
+
+We created a savings-to-cost ratio using the Statista data. Solving according to the cost difference from Health System Tracking, we found a savings of $549. We use this savings to solve for the missing cost of providing mental health resources (800 - x = 549), which is $251.
+
+
+Previously, we have set the classification thresholds (the lowest probability required to label an individual as "depressed") for each model to maximize their statistical performance, specially the kappa value. However, in a real world use case, the target we should optimize for changes to finiacial impact instead. Therefore, we have re-calibrated the classification thresholds for all models except for the stack model to maximize their performance, and our results are shown in the figures below. Note that since the stack models are predicting a smaller portion of the dataset, their financial impacts needed to be scaled accordingly to make this comparison useful. 
+
+```{r dependencies, cache=TRUE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(caret)
+library(C50)
+library(randomForest)
+
+# --- Financial parameters & helper ---
+COST_FN  <- 800
+COST_FP  <- 251
+SAVING_TP <- 549
+BENEFIT_TN <- 0
+
+compute_financials <- function(tp, fp, fn, tn, model_name) {
+  impact <- tp * SAVING_TP - fp * COST_FP - fn * COST_FN + tn * BENEFIT_TN
+  precision <- ifelse((tp + fp) > 0, tp / (tp + fp), 0)
+  data.frame(
+    Model = model_name, TP = tp, FP = fp, FN = fn, TN = tn,
+    Net_Impact = round(impact, 0),
+    Precision = round(precision * 100, 2)
+  )
+}
+
+find_best_threshold <- function(prob, actual, model_name, thresholds = seq(0.05, 0.95, by = 0.05)) {
+  results <- data.frame()
+  for (t in thresholds) {
+    pred <- ifelse(prob > t, 1, 0)
+    tp <- sum(pred == 1 & actual == "1")
+    fp <- sum(pred == 1 & actual == "0")
+    fn <- sum(pred == 0 & actual == "1")
+    tn <- sum(pred == 0 & actual == "0")
+    impact <- tp * SAVING_TP - fp * COST_FP - fn * COST_FN + tn * BENEFIT_TN
+    results <- rbind(results, data.frame(Threshold = t, TP = tp, FP = fp, FN = fn, TN = tn, Net_Impact = impact))
+  }
+  results$Model <- model_name
+  results
+}
+
+# --- Load data ---
+test_dummy <- readRDS("test_dummy.rds")
+if ("mental_illness" %in% names(test_dummy)) {
+  actual_labels <- as.factor(test_dummy$mental_illness)
+} else if ("y" %in% names(test_dummy)) {
+  actual_labels <- as.factor(test_dummy$y)
+} else {
+  actual_labels <- as.factor(test_dummy[, ncol(test_dummy)])
+}
+
+glm_prob <- readRDS("glm_prob.rds")
+knn_prob <- readRDS("knn_prob_mental_illness.rds")
+ann_prob <- readRDS("ann_prob_mental_illness.rds")
+c50_prob <- readRDS("c50_prob_mental_illness.rds")
+svm_prob <- readRDS("best_svm_prob_mental_illness.rds")
+
+stack_test <- readRDS("depression_stack_test.rds")
+meta_tree  <- readRDS("depression_meta_model_tree.rds")
+meta_rf    <- readRDS("depression_meta_model_rf.rds")
+stack_test$actual <- as.factor(stack_test$actual)
+
+# --- Flip probabilities if needed ---
+flip_if_needed <- function(prob, actual) {
+  if (sum(prob > 0.5) == 0 & mean(prob) > 0.3) return(1 - prob)
+  return(prob)
+}
+glm_prob <- flip_if_needed(glm_prob, actual_labels)
+knn_prob <- flip_if_needed(knn_prob, actual_labels)
+ann_prob <- flip_if_needed(ann_prob, actual_labels)
+c50_prob <- flip_if_needed(c50_prob, actual_labels)
+svm_prob <- flip_if_needed(svm_prob, actual_labels)
+
+# --- Default-threshold confusion matrices ---
+model_names_def <- c("Logistic Regression", "KNN", "ANN", "Decision Tree (C5.0)", "Best SVM")
+probs_list <- list(glm_prob, knn_prob, ann_prob, c50_prob, svm_prob)
+
+cms_def <- lapply(probs_list, function(p) {
+  pred <- factor(ifelse(p > 0.34, 1, 0), levels = levels(actual_labels))
+  confusionMatrix(pred, actual_labels, positive = "1")
+})
+
+# --- Optimized-threshold confusion matrices ---
+all_thresh <- do.call(rbind, lapply(seq_along(probs_list), function(i)
+  find_best_threshold(probs_list[[i]], actual_labels, model_names_def[i])
+))
+best_per_model <- do.call(rbind, lapply(split(all_thresh, all_thresh$Model), function(df)
+  df[which.max(df$Net_Impact), ]
+))
+
+model_names_opt <- c("LogReg (opt)", "KNN (opt)", "ANN (opt)", "C5.0 (opt)", "SVM (opt)")
+best_thresholds <- sapply(model_names_def, function(m) best_per_model[best_per_model$Model == m, "Threshold"])
+
+cms_opt <- lapply(seq_along(probs_list), function(i) {
+  pred <- factor(ifelse(probs_list[[i]] > best_thresholds[i], 1, 0), levels = levels(actual_labels))
+  confusionMatrix(pred, actual_labels, positive = "1")
+})
+
+# --- Stacked model confusion matrices ---
+test_features <- stack_test[, -which(names(stack_test) == "actual")]
+meta_tree_cm <- confusionMatrix(predict(meta_tree, newdata = test_features), stack_test$actual, positive = "1")
+meta_rf_cm   <- confusionMatrix(predict(meta_rf, newdata = test_features), stack_test$actual, positive = "1")
+
+# --- Short names for bar labels ---
+sn <- c("LogReg", "KNN", "ANN", "C5.0", "SVM",
+        "LogReg*", "KNN*", "ANN*", "C5.0*", "SVM*",
+        "Stack-Tree", "Stack-RF")
+
+# ====== FINANCIAL COMPARISON ======
+
+all_cms <- c(cms_def, cms_opt, list(meta_tree_cm, meta_rf_cm))
+all_names <- c(model_names_def, model_names_opt, "Stacked (C5.0)", "Stacked (RF)")
+
+fin_results <- data.frame()
+for (i in seq_along(all_cms)) {
+  cm <- all_cms[[i]]$table
+  tp <- cm["1","1"]; fp <- cm["1","0"]; fn <- cm["0","1"]; tn <- cm["0","0"]
+  fin_results <- rbind(fin_results, compute_financials(tp, fp, fn, tn, all_names[i]))
+}
+
+n_pos <- sum(actual_labels == "1"); n_neg <- sum(actual_labels == "0")
+baseline <- compute_financials(0, 0, n_pos, n_neg, "Baseline")
+baseline_impact <- baseline$Net_Impact
+fin_results$Net_Impact <- fin_results$Net_Impact - baseline_impact
+baseline$Net_Impact <- 0
+fin_results <- rbind(baseline, fin_results)
+
+knitr::kable(fin_results[, c("Model", "TP", "FP", "FN", "TN", "Net_Impact", "Precision")],
+             align = "lcccccc", caption = "Financial Impact vs. Baseline (Relative)")
+
+# --- Financial bar plot ---
+par(mar = c(12, 5, 3, 2))
+iv <- fin_results$Net_Impact
+fn <- c("Baseline", sn)
+names(iv) <- fn
+fc <- c("gray60", rep("#3498db",5), rep("#f39c12",5), rep("#e74c3c",2))
+fc[which.max(iv)] <- "#2ecc71"
+barplot(iv, col=fc, main="Net Financial Impact vs. Baseline (* = optimized threshold)",
+        ylab="Net Impact ($)", las=2, cex.names=0.6)
+abline(h=0, lty=2, col="gray40")
+legend("topright", legend=c("Default","Optimized","Stacked"), fill=c("#3498db","#f39c12","#e74c3c"), bty="n", cex=0.8)
+```
+
+```{r}
+prevalence <- mean(actual_labels == "1")
+```
+
+As observed within the Net financial impact figure, the optimized models have a much better financial impact when compared to their baselines. However, they all have the exact **same** financial impact. Looking more closely, this is because they have the **exact same** predictions! They all predict every customer as depression prone. This is a very interesting result as it indicates that the optimal financial strategy in this circumstance is simply to give every customer treatment indiscriminately. 
+
+This unique situation is likely due to the extremely high **cost** of a misdiagnosing a depression prone customer (\$800) and the high **benefit** (\$549) of diagnosing a depression prone patient correctly. This, when combined with the skewed dataset, with `r round(prevalence * 100, 1)`% of the data points being depressed patients, meant that classifying everyone as depressed benefits from the high benefit of a true positive and the low costs of a false positive. 
