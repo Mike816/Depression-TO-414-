@@ -10,6 +10,10 @@ output:
 
 [← Back to Main Report](GroupFinalReport.html)
 
+# Introduction 
+This section trains an Artificial Neural Network to predict the history of mental illness outcome. The dummy-encoded and min-max normalized training and test sets are loaded, as the ANN requires all inputs to be numerical and on a comparable scale. The network is built using the neuralnet package with a two-hidden-layer architecture (5 neurons and 2 neurons respectively), and trained until convergence using backpropagation.
+
+
 # import data
 
 ```{r}
@@ -80,5 +84,7 @@ confusionMatrix(
   positive = "1"
 )
 ```
+# Conclusion
 
+A classification threshold of 0.34 is applied, consistent with the one selected for the GLM. The confusion matrix shows an accuracy of 64.3% and a Kappa of 0.07. While accuracy is slightly higher than the GLM, the Kappa is notably lower, indicating weaker overall agreement between predictions and true labels. Sensitivity drops to 24.5%, meaning the model struggles considerably to identify positive cases, while specificity is higher at 81.9%. The model performs better than random chance (Kappa > 0), but its predictive power on the positive class is limited.
 
