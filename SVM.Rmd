@@ -1,15 +1,23 @@
 ---
 title: "SVM"
-output:
-  html_document:
-    theme: flatly
-    toc: yes
-    toc_float:
-      collapsed: true
+output: html_document
 ---
 
 [← Back to Main Report](GroupFinalReport.html)
 
+In this section, we apply a Support Vector Machine (SVM) to the same classification task. SVMs work by finding the optimal hyperplane that maximally separates classes in the feature space, and through the use of kernel functions, they can capture non-linear decision boundaries by implicitly mapping the data into higher-dimensional spaces.
+
+Because the choice of kernel significantly affects how the SVM learns the decision boundary, several kernels were tested:
+
+- RBF
+- linear (vanilla)
+- polynomial
+- hyperbolic tangent
+- Laplace
+- ANOVA
+- Bessel
+
+Their relative performance was compared using Kappa and sensitivity on the test set. The best-performing kernel was then selected for the final probability output used in downstream ensemble modeling.
 
 ```{r, cache=TRUE}
 
@@ -146,3 +154,7 @@ actual_values <- factor(test_dummy$history_of_mental_illness_yes, levels = c("0"
 cm_low_svm <- confusionMatrix(pred_low_thresh, actual_values, positive = "1")
 print(cm_low_svm)
 ```
+
+The results across kernels were largely poor. Most (RBF, vanilla, polynomial, Laplace, ANOVA) collapsed entirely to predicting the majority class, yielding a Kappa of 0 and zero sensitivity. The Bessel kernel actually produced a negative Kappa (-0.052), performing worse than random chance. The tanh kernel was the only one among the initial batch to show any discriminative ability (Kappa 0.031, sensitivity 32.9%). Ultimately, the splinedot kernel was identified as the best overall, achieving a Kappa of approximately 0.05 and sensitivity of 0.30. We hypothesize that spline dot's ability to work with non-linear connections helped it become the best kernel of the bunch. The spline kernel is known for its performance especially in sparse datasets and regression.  
+
+Applying a lowered threshold of 0.30 to the RBF kernel's probability outputs improves sensitivity to 61%, but at a steep cost: specificity drops to 44% and overall accuracy falls to 49%, well below the No Information Rate. The Kappa of 0.040 remains very low. Overall, SVM performs comparably to KNN and the Random Forest, and remains well below the GLM.
