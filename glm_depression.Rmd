@@ -8,6 +8,10 @@ output:
       collapsed: true
 ---
 
+# Introduction 
+
+This section fits a logistic regression model to predict whether a patient has a history of mental illness. The training and test sets in their original (non-dummy) format are loaded, and a GLM with a binomial link function is fit using all available predictors. To interpret the coefficients, they are converted into Odds Ratios (OR) via exponentiation: an OR greater than 1 indicates that the variable increases the probability of a positive outcome ("Yes"), while an OR less than 1 indicates a decrease. A confidence interval that does not include 1 confirms statistical significance.
+
 [← Back to Main Report](GroupFinalReport.html)
 
 # Import data
@@ -66,6 +70,8 @@ library(caret)
 
 confusionMatrix(glm_pred, test$History.of.Mental.Illness, positive = "Yes")
 ```
+# Conclusion
 
+A classification threshold of 0.34 is applied to generate predictions on the test set, as it is the value that maximizes Cohen's Kappa across all tested thresholds. The confusion matrix shows an accuracy of 62.5% and a Kappa of 0.14. While these results are modest, they confirm that the model performs better than random chance: a Kappa greater than zero means the model has genuine predictive power beyond simply always predicting the majority class. Sensitivity (43.8%) is lower than specificity (70.8%), reflecting the difficulty of correctly identifying positive cases. 
 
 
