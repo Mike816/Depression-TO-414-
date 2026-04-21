@@ -13,6 +13,7 @@ output:
 414 Insurance's dataset with depression data can reveal key characteristics as early mental illness predictors. Being able to quickly identify at-risk patients is an important priority for 414 Insurance, as it leads to preventions of the most extreme mental illness scenarios. 
 
 We use data-forward methodologies to assess mental illness patterns, recommending a targeted approach to predict onset of mental illness. Our approach utilizes supervised and unsupervised algorithmic learning models to find target characteristics. We demonstrate our work with each type of algorithm to propose the most effective strategy for identifying and preventing onset of mental illness. 
+
 # Background
 
 Depression--characterized by symptoms ranging from persistent low mood, loss of interest, sucidial thoughts-- is a common, clinically significant, and expensive medical condition for insurers. According to a Gallup poll, 3 in 10 US adults have been diagnosed with depression at some point in their lives ([Gallup](https://news.gallup.com/poll/505745/depression-rates-reach-new-highs.aspx)). In colleges across the US, 37% of the student population reported moderate to severe depressive symptoms in 2025 ([University of Michigan](https://sph.umich.edu/news/2025posts/college-student-mental-health-third-consecutive-year-improvement.html)). 
@@ -27,19 +28,19 @@ The following links provide the detailed technical breakdown of our data process
 
 <div id="Cleaning">
 
-### 1. Data Preparation and Exploration
-# Main
+# 1. Data Preparation and Exploration
+## Main
 The first phase of the analysis focuses on preparing the data for modeling. The raw dataset is imported from a CSV file and a random 10% sample is drawn to reduce computational burden. The Name column is removed as it carries no predictive value, and all character variables are coerced to factors. A preliminary inspection of the data structure and summary statistics is then performed. The cleaned dataset is subsequently saved as an RDS file for reproducibility.
 
 * [Main Data Cleaning](Main.html)
 
-# Initial Training and Testing Split
+## Initial Training and Testing Split
 In the second file, the cleaned data is split into training and test sets following two parallel pipelines. The first preserves the original factor structure for tree-based models. The second converts the data into a fully dummy-encoded and min-max normalized format, suitable for distance- and gradient-based models such as KNN, ANN, and SVM. Both pipelines use a 50/50 split with the same random seed to ensure comparability across models.
 
 * [Initial Training and Testing Split](trainingtestingsplit.html)
 </div>
 
-### 2. Supervised Learning Models
+# 2. Supervised Learning Models
 * [Generalized Linear Model (GLM) for Depression](glm_depression.html)
 
 The GLM is our best individual model, with a Kappa of 0.143 and the most balanced sensitivity (43.8%) and specificity (70.8%). It correctly identifies a meaningful share of both positive and negative cases, making it the most reliable classifier among the individual models we tested. We believe it performs best because the predictors in this dataset relate to mental illness risk in a relatively straightforward way, and the GLM is well-suited to capture that. It also handles the class imbalance better than our other models without needing threshold adjustments.
@@ -58,14 +59,36 @@ SVM proved to be the most inconsistent model in our analysis. Most of the kernel
 
 * [Artificial Neural Network (ANN) & Confusion Matrix](ANN-with-conf-matrix.html)
 
-### 3. Ensemble Methods & Final Predictions
+# 3. Ensemble Methods & Final Predictions
+
+## Overview of Stacked Model Approach
+
+The stacked model belongs to the family of stacked generalization (ensemble techniques) where a super‑learner (here, a decision tree) learns to combine base‑learner predictions in a way that can outperform any single model, strengthened by incorporating a cost matrix. 
+
+In practice, each base model first generates a prediction vector on the test set, and then these predictions are coalesced into a single data frame along with the true response to create a new, smaller feature space for the second‑level model.  
+
+### What is a cost matrix? 
+
+In addition to combining the predictions of the five base models, the stacked model incorporates a **cost matrix** into the second‑level decision tree. 
+
+In our context, falsely predicting that a non-depressed client is depressed (a false positive) may be an overuse of mental resources, while missing a depressed client (a false negative) creates large costs for 414 Insurance down the road. 
+
+By assigning a penalty each misclassification, a cost matrix helps the decision tree optimize for a cost‑sensitive error tradeoff. 
+
+## Kappa Analysis: Stacked Model
+
+The stacked model achieved a relatively strong Kappa (9.81). 
+
+It seemed like the stacked model mainly pulled from the ANN and KNN individual models. We hypothesize that since depression can exhibit complex patterns, the ANN was able to distinguish nonlinear relationships in the dataset.  The KNN contributes additional correlative relationships, creating clusters of similar depression groups that ANN  piggybacks off of.  This extra information lets the stacker better separate true positives from false positives, which shows up as a large jump in kappa. 
+
+
 * [Combined Probabilities](CombinedProbs.html)
 * [Secondary Data Partitioning](SecondSplitData.html)
 * [Stacked Model Architecture](StackedModel.html)
 * [Final Stacked Model Predictions](StackModelPredictions.html)
 
 
-### 4. Interactive Tools
+# 4. Interactive Tools
 Our ensemble model is hosted as a web application for real-time risk assessment.
 
 <div style="text-align: center; margin: 20px 0;">
