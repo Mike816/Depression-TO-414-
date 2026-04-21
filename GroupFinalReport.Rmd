@@ -25,9 +25,12 @@ Therefore, identifying high-risk members earlier opens an opportunity to target 
 
 The following links provide the detailed technical breakdown of our data processing and modeling pipeline.
 
+<div id="Cleaning">
+
 ### 1. Data Preparation and Exploration
 * [Main Data Cleaning](Main.html)
 * [Initial Training and Testing Split](trainingtestingsplit.html)
+</div>
 
 ### 2. Supervised Learning Models
 * [Generalized Linear Model (GLM) for Depression](glm_depression.html)
