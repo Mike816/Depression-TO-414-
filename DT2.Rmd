@@ -1,11 +1,8 @@
 ---
 title: "DT2"
-output:
-  html_document:
-    theme: flatly
-    toc: yes
-    toc_float:
-      collapsed: true
+author: "Daniel Myung"
+date: "2026-04-13"
+output: html_document
 ---
 
 [← Back to Main Report](GroupFinalReport.html)
@@ -14,6 +11,11 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+In this section, we apply two tree-based classifiers to predict whether an individual has a history of mental illness: a C5.0 Decision Tree and a Random Forest. 
+
+The C5.0 decision tree recursively partitions the data based on the feature that best separates the classes at each node, producing an interpretable set of if-else rules. The Random Forest extends this idea by building an ensemble of 500 decision trees, each trained on a random bootstrap sample of the data and considering only a random subset of features at each split. 
+
+For the Random Forest, a custom classification threshold of 0.34 is also explored to improve sensitivity toward the minority class. 
 
 ```{r, cache= TRUE}
 library(C50)
@@ -61,6 +63,8 @@ saveRDS(c50_pred, file = "c50_pred.rds")
 # Saving the 'Yes' probability vector specifically for consistency with your other models
 saveRDS(c50_prob[, "Yes"], file = "c50_prob_mental_illness.rds")
 ```
+
+The C5.0 tree produces a degenerate result: it predicts "No" for every single observation, achieving an accuracy of 69.2% that exactly matches the No Information Rate. The Kappa of 0 confirms the model has learned nothing beyond the majority class baseline, with sensitivity of 0% and specificity of 100%. The tree collapsed to a single root node, meaning it found no split informative enough to justify branching: this is a direct consequence of the class imbalance overwhelming the algorithm.
 
 ```{r, cache= TRUE}
 library(randomForest)
@@ -122,3 +126,7 @@ saveRDS(rf_prob[, "Yes"], file = "rf_prob_mental_illness.rds")
 # Preview results
 head(rf_prob)
 ```
+
+At the default 0.5 threshold, the Random Forest suffers from the same majority-class bias, with a Kappa of just 0.018 and sensitivity of only 3.8%. Lowering the threshold to 0.34 meaningfully improves performance: Kappa rises to 0.095 and sensitivity reaches 35%, at the cost of reduced specificity (74.3%). This represents a more balanced trade-off and is the more useful configuration for this task.
+
+At this point, the GLM remains the best overall model with a Kappa of 0.143 and the most balanced sensitivity (43.8%) and specificity (70.8%). The Random Forest at the adjusted threshold is second, followed by KNN, while the C5.0 tree fails entirely.
