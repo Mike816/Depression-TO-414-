@@ -1,5 +1,4 @@
 ---
-title: "GroupFinalReport"
 output:
   html_document:
     css: ross-rmarkdown.css
@@ -88,7 +87,13 @@ It seemed like the stacked model mainly pulled from the ANN and KNN individual m
 
 
 * [Combined Probabilities](CombinedProbs.html)
+
+Here we combined the individual probability predictions from each of the models. Later on we use decision trees as the second layer of our stacked model. By taking the individual probabilities from each of the models and combining them, we create a dataset that allows the second layer to learn from. 
+
 * [Secondary Data Partitioning](SecondSplitData.html)
+
+Here we took the combined probabilities from the models, and created a 70 30 split to train and test our stacked models on. 
+
 * [Stacked Model Architecture](StackedModel.html)
 * [Final Stacked Model Predictions](StackModelPredictions.html)
 
