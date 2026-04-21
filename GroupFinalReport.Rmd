@@ -2,11 +2,16 @@
 title: "GroupFinalReport"
 output:
   html_document:
-    theme: flatly
-    toc: yes
-    toc_float:
-      collapsed: true
+    css: ross-rmarkdown.css
+    toc: true
+    toc_float: false
+    includes:
+      before_body: ross-header.html
 ---
+
+| ![Riccardo Ferrari](https://drive.google.com/uc?export=view&id=1DtvCv0cgOIgukiAOCnaYlYNkAS5bPZ0C "Riccardo Ferrari") | ![Mike Ye](https://drive.google.com/uc?export=view&id=1MGh2iKI855FLUBuEJzPAOURbKulWka9r "Mike Ye") | ![Daniel Myung](https://drive.google.com/uc?export=view&id=1oX3kGp_eOsgvzug_oAhZMJBVH7htjpfW) | ![Steven Liu](https://drive.google.com/uc?export=view&id=10eQB_7168yJiNFwlv98QrgtHAe1rZQov "Steven Liu") | ![Andrea Demelas](https://drive.google.com/uc?export=view&id=1sfs8yje5_bIvdE-VDuWeBrWkE1UmgzFm) |
+|---|---|---|---|---|
+| **[Riccardo Ferrari](https://www.linkedin.com/in/riccardo-ferrari-2929b722a/)**<br>Financial Analyst | **[Mike Ye](https://www.linkedin.com/in/mike-ye-460923270/)**<br>Team Lead | **[Daniel Myung]()**<br>Data Scientist | **[Steven Liu](https://www.linkedin.com/in/steven-liu-554652244/)**<br>Communication Specialist | **[Andrea Demelas](https://www.linkedin.com/in/andreademelas/)**<br>Business Analyst |
 
 # Executive Summary 
 
