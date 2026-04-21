@@ -5,7 +5,7 @@ date: "2026-04-13"
 output: html_document
 ---
 
-[← Back to Main Report](GroupFinalReport.html)
+[← Back to Main Report](GroupFinalReport.html#knn)
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
