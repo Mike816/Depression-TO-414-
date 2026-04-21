@@ -34,9 +34,21 @@ The following links provide the detailed technical breakdown of our data process
 
 ### 2. Supervised Learning Models
 * [Generalized Linear Model (GLM) for Depression](glm_depression.html)
+
+The GLM is our best individual model, with a Kappa of 0.143 and the most balanced sensitivity (43.8%) and specificity (70.8%). It correctly identifies a meaningful share of both positive and negative cases, making it the most reliable classifier among the individual models we tested. We believe it performs best because the predictors in this dataset relate to mental illness risk in a relatively straightforward way, and the GLM is well-suited to capture that. It also handles the class imbalance better than our other models without needing threshold adjustments.
+
 * [K-Nearest Neighbors (kNN) Analysis](knn_2.html)
+
+KNN performs poorly, with a Kappa of just 0.026 and a sensitivity of only 9.5%, meaning it almost entirely fails to identify individuals with a history of mental illness. On the surface its accuracy looks reasonable at 67%, but this is misleading: a model that always predicts "No" would score similarly. We believe the main issue is the class imbalance: with roughly 69% of cases being "No," the model's nearest neighbors are almost always dominated by the majority class, pushing nearly every prediction toward "No" regardless of the individual's actual characteristics.
+
 * [Decision Tree and Random Forest Results](DT2.html)
+
+The C5.0 decision tree degenerates entirely, predicting "No" for every single observation and achieving a Kappa of 0. The Random Forest does better, but only after we lower the classification threshold from 0.5 to 0.34, which brings sensitivity up to 35% and Kappa to 0.095. We believe both models struggle for the same reason. The class imbalance is strong enough that neither algorithm finds it worthwhile to split toward the minority class without explicit correction. The Random Forest's ensemble approach gives it a slight edge, but it still falls well short of the GLM.
+
 * [Support Vector Machine (SVM) Classification](SVM.html)
+
+SVM proved to be the most inconsistent model in our analysis. Most of the kernels we tested (including the commonly used RBF and linear kernels) failed completely, predicting "No" for every observation. The splinedot kernel performed best with a Kappa of ~0.05 and sensitivity of ~0.30, and applying a lower threshold to the RBF model pushed sensitivity higher but introduced too many false positives to be practical. 
+
 * [Artificial Neural Network (ANN) & Confusion Matrix](ANN-with-conf-matrix.html)
 
 ### 3. Ensemble Methods & Final Predictions
