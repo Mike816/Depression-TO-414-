@@ -115,7 +115,7 @@ Our ensemble model is hosted as a web application for real-time risk assessment.
   </a>
 </div>
 
-### 4. Financial analysis 
+## Financial analysis 
 Although the statistical performance of our models are significant, the true measure of their efficacy is in their financial performance. More specifically, we define this to be the amount of money the models will save 414 insurance compared to the base line of labeling all patients as non-depressed. 
 
 To ensure that this analysis is as accurate as possible, we have created the following cost matrix from real world data:
@@ -277,3 +277,9 @@ prevalence <- mean(actual_labels == "1")
 As observed within the Net financial impact figure, the optimized models have a much better financial impact when compared to their baselines. However, they all have the exact **same** financial impact. Looking more closely, this is because they have the **exact same** predictions! They all predict every customer as depression prone. This is a very interesting result as it indicates that the optimal financial strategy in this circumstance is simply to give every customer treatment indiscriminately. 
 
 This unique situation is likely due to the extremely high **cost** of a misdiagnosing a depression prone customer (\$800) and the high **benefit** (\$549) of diagnosing a depression prone patient correctly. This, when combined with the skewed dataset, with `r round(prevalence * 100, 1)`% of the data points being depressed patients, meant that classifying everyone as depressed benefits from the high benefit of a true positive and the low costs of a false positive. 
+
+# Conclusion
+
+In conclusion, the stacked model is the most realistic direction for future work because it better reflects how this problem would be handled in practice, even though the GLM has the most financial impact. Rather than relying on a single classifier, the stacked approach combines the strengths of multiple models and uses a second-layer learner to make a more flexible and potentially less biased decision.
+
+The stacked framework also has the advantage of longevity. As new interventions are introduced and the available resources change, the model can be retrained so its decision rules stay aligned with current conditions. In brief, the stacked model is a more adaptable foundation for future updates, making it the most realistic long-term option for this project.
