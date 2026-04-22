@@ -11,7 +11,7 @@
 
 
 
-<title>GroupFinalReport</title>
+<title>GroupFinalReport.knit</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -445,7 +445,6 @@ display: none;
 
 
 
-<h1 class="title toc-ignore">GroupFinalReport</h1>
 
 </div>
 
@@ -480,9 +479,10 @@ Model</a></li>
 <li><a href="#interactive-tools" id="toc-interactive-tools">4.
 Interactive Tools</a>
 <ul>
-<li><a href="#financial-analysis" id="toc-financial-analysis">4.
-Financial analysis</a></li>
+<li><a href="#financial-analysis" id="toc-financial-analysis">Financial
+analysis</a></li>
 </ul></li>
+<li><a href="#conclusion" id="toc-conclusion">Conclusion</a></li>
 </ul>
 </div>
 
@@ -708,8 +708,8 @@ assessment.</p>
 <p><a href="https://j33c4y-daniel-myung.shinyapps.io/Interactive/" target="_blank" class="btn btn-success btn-lg" style="padding: 15px 30px; font-weight: bold;"> Launch Interactive
 Prediction Portal </a></p>
 </div>
-<div id="financial-analysis" class="section level3">
-<h3>4. Financial analysis</h3>
+<div id="financial-analysis" class="section level2">
+<h2>Financial analysis</h2>
 <p>Although the statistical performance of our models are significant,
 the true measure of their efficacy is in their financial performance.
 More specifically, we define this to be the amount of money the models
@@ -905,6 +905,21 @@ dataset, with 32.5% of the data points being depressed patients, meant
 that classifying everyone as depressed benefits from the high benefit of
 a true positive and the low costs of a false positive.</p>
 </div>
+</div>
+<div id="conclusion" class="section level1">
+<h1>Conclusion</h1>
+<p>In conclusion, the stacked model is the most realistic direction for
+future work because it better reflects how this problem would be handled
+in practice, even though the GLM has the most financial impact. Rather
+than relying on a single classifier, the stacked approach combines the
+strengths of multiple models and uses a second-layer learner to make a
+more flexible and potentially less biased decision.</p>
+<p>The stacked framework also has the advantage of longevity. As new
+interventions are introduced and the available resources change, the
+model can be retrained so its decision rules stay aligned with current
+conditions. In brief, the stacked model is a more adaptable foundation
+for future updates, making it the most realistic long-term option for
+this project.</p>
 </div>
 
 
