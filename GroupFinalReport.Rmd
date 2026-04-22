@@ -1,5 +1,4 @@
 ---
-title: "GroupFinalReport"
 output:
   html_document:
     css: ross-rmarkdown.css
